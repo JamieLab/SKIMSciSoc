@@ -56,10 +56,8 @@ for depth in contourDepths:
         params = transform_params(masterParams, depth);#, errorLevel, repeat);
         print params.paramsetName;
         
-        python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordinates=False, generateCellData=False, calculateShelfCurrents=True, withGasTransferCalc=False);
-        
         ##python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordinates=True, generateCellData=True, calculateShelfCurrents=True);
-        #python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordinates=False, generateCellData=False, calculateShelfCurrents=True, withGasTransferCalc=True);
+        python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordinates=True, generateCellData=True, calculateShelfCurrents=True, withGasTransferCalc=True);
         ##python_util.calc_means.calc_mean_data(params, calculateTable1=True, calculateTable2=True, calculateTable2GasTransferVelocity=True, verbose=True);
         ##python_util.calc_means.calc_mean_data(params, calculateTable1=False, calculateTable2=True, calculateTable2GasTransferVelocity=True, verbose=True);
         
