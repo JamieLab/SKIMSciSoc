@@ -1,0 +1,16 @@
+Order of execution:
+
+1) Set parameter function in parameter_sets.py
+2) Extract shelf coordinates using shelf_coord_creator.py
+	- Only needs to be run if shelf coordinates will have changed.
+	- Optionally set plotIndividualContourPaths = True to help identify the contour paths to use for shallow and deep, respectively.
+3) Calculate cell data using extract_cell_data.py
+	- Check the normals look apropriate on the plot that is produced from this script.
+4) Calculate current across-shelf components using calculate_surface_currents3.py
+
+
+
+Plot global current proportions: plot_multiyear_component_dominance.py
+Plot along-shelf regions: plot_multiyear_along_shelf_globalparts3.py
+
+Calculate data for table 1 and 2: calculate_proportion_means.py

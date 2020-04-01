@@ -1,0 +1,17 @@
+Painter:Wei:
+CTDs, DIC and nutrient samples up to 2100 m. ADCP 60x16m depth bins (so up to 960 m?).
+
+Yuan:
+Surface (satelite altimetry, HF radar and ADCP measurments)
+
+Fewings:
+Shallow coastal water 12m depth. Measurements cover entire depth range (0-12m).
+
+Woodson:
+Three mooring locations at 19, 20, and 21m depth plus ADCP. Not Entirely sure of depth of ADCP measurements, but their analysis covers the top 20 or 21 metres.
+
+Waite:
+Surface drifters with additional ADCP, O2, Chlorophyll, nitrate, salinity, 'large particles', and temperature profiles along transects up to 400m depth.
+
+Wei:
+From surface to depth (potentially up to 1200m). Couldn't find information on the line of moored stations (the authors describe it simply as "The PN section is a well-known array of hydrographic observation that transects the Kuroshio" without defining PN). Other papers reference a PN-line of observations in the East China Sea but these they're in different positions. I'm only assuming their moored stations sample at depth because they fit a 2D model (transect with depth).
