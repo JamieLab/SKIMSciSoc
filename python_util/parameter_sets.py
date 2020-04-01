@@ -24,13 +24,13 @@ def get_baseline_params():
     
     
     #file paths
-    params.ekmanTemplate = Template("data/SKIM/processed_data/monthly_means/ekman_monthly_mean/${YYYY}${MM}_ekman_surface_monthly_mean.nc");
-    params.geostrophicTemplate = Template("data/SKIM/processed_data/monthly_means/geostrophic_monthly_mean/${YYYY}${MM}_geostrophic_monthly_mean.nc");
-    params.stokesTemplate = Template("data/SKIM/processed_data/monthly_means/stokes_monthly_mean/${YYYY}${MM}_stokes_monthly_mean.nc");
-    params.wavewatchWndTemplate = Template("data/SKIM/processed_data/monthly_means/wavewatch_wnd_monthly_means/wnd_monthly_means_${YYYY}${MM}.nc");
-    params.wavewatchHsTemplate = Template("data/SKIM/processed_data/monthly_means/wavewatch_Hs_monthly_means/Hs_monthly_means_${YYYY}${MM}.nc");
-    params.skimulatorTemplate = Template("data/SKIM/processed_data/monthly_means/simulated_skim/${YYYY}${MM}_monthly_mean_scisoc_atne.nc");
-    params.reynoldsSSTTemplate = Template("data/reynolds_sst/reynolds_avhrr_only_monthly_0.25_calculated_tmh/${YYYY}/${YYYY}${MM}01_OCF-SST-GLO-1M-100-REYNOLDS_0.25deg_TMH.nc");
+    params.ekmanTemplate = Template("input_data/SKIM/processed_data/monthly_means/ekman_monthly_mean/${YYYY}${MM}_ekman_surface_monthly_mean.nc");
+    params.geostrophicTemplate = Template("input_data/SKIM/processed_data/monthly_means/geostrophic_monthly_mean/${YYYY}${MM}_geostrophic_monthly_mean.nc");
+    params.stokesTemplate = Template("input_data/SKIM/processed_data/monthly_means/stokes_monthly_mean/${YYYY}${MM}_stokes_monthly_mean.nc");
+    params.wavewatchWndTemplate = Template("input_data/SKIM/processed_data/monthly_means/wavewatch_wnd_monthly_means/wnd_monthly_means_${YYYY}${MM}.nc");
+    params.wavewatchHsTemplate = Template("input_data/SKIM/processed_data/monthly_means/wavewatch_Hs_monthly_means/Hs_monthly_means_${YYYY}${MM}.nc");
+    params.skimulatorTemplate = Template("input_data/SKIM/processed_data/monthly_means/simulated_skim/${YYYY}${MM}_monthly_mean_scisoc_atne.nc");
+    params.reynoldsSSTTemplate = Template("input_data/reynolds_sst/reynolds_avhrr_only_monthly_0.25_calculated_tmh/${YYYY}/${YYYY}${MM}01_OCF-SST-GLO-1M-100-REYNOLDS_0.25deg_TMH.nc");
     #params.ekmanTemplate = Template("/media/verwirrt/Backup_THolding/THoldingBackup/SKIM/processed_data/monthly_means/ekman_monthly_mean/${YYYY}${MM}_ekman_surface_monthly_mean.nc");
     #params.geostrophicTemplate = Template("/media/verwirrt/Backup_THolding/THoldingBackup/SKIM/processed_data/monthly_means/geostrophic_monthly_mean/${YYYY}${MM}_geostrophic_monthly_mean.nc");
     #params.stokesTemplate = Template("/media/verwirrt/Backup_THolding/THoldingBackup/SKIM/processed_data/monthly_means/stokes_monthly_mean/${YYYY}${MM}_stokes_monthly_mean.nc");
