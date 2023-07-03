@@ -30,9 +30,11 @@ def transform_params(_params, shallowContourDepth):#, errorLevel, repeat):
 ######################################
 ### Test run: 500m shallow, 800m deep.
 params = ps.get_example_method_plot_params();
-python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordinates=True, generateCellData=True, calculateShelfCurrents=True,outputPathOverride='D:/SKIM');
+python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=True, generateShelfCoordinates=True, generateCellData=True, calculateShelfCurrents=True,outputPathOverride='D:/SKIM');
 params = ps.get_example_method_plot_params_64();
-python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordinates=True, generateCellData=True, calculateShelfCurrents=True,outputPathOverride='D:/SKIM');
+python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=True, generateShelfCoordinates=True, generateCellData=True, calculateShelfCurrents=True,outputPathOverride='D:/SKIM');
+params = ps.get_global_params();
+python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=True, generateShelfCoordinates=True, generateCellData=True, calculateShelfCurrents=True,outputPathOverride='D:/SKIM');
 # #python_util.calc_means.calc_mean_data(params, calculateTable1=False, calculateTable2=True, calculateTable2GasTransferVelocity=True, verbose=True);
 # python_util.calc_means.calc_mean_data(params, calculateTable1=False, calculateTable2=True, calculateTable2GasTransferVelocity=True, verbose=True);
 
