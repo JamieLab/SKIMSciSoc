@@ -10,7 +10,7 @@ Analysis to be run as follows:
 3. Run DATA_calculate mean_monthly_currents.py
 4. Run analysis.py
 
-These steps will output a csv file with mean annual, seaonal currents for further analysis (example found in output_xlsx/table2data_global_500m.csv). 
+These steps will output a csv file with mean annual, seaonal currents for 14 shelf seas in Laruelle et al. (2021; https://doi.org/10.1038/s41467-017-02738-z) for further analysis (example found in output_xlsx/table2data_global_500m.csv). 
 This file must be manually split into a annual and 4 seasonal xlsx files (examples in output_xlsx) and the dpCO2 trends from Laruelle et al. (2021; https://doi.org/10.1038/s41467-017-02738-z) added manually.
 
 5. Run PLOT_means_data.py to produce final results.
