@@ -125,8 +125,8 @@ def downloadHs(save_loc,startyr = 1993,end_yr = 2016):
 def downloadekmansurf(save_loc,startyr = 1993,end_yr = 2016):
     #Function that cyles through the wavewatch archive and downloads the data.
     ftpserver='eftp.ifremer.fr'
-    username = 'gg1f3e8'
-    password = 'pinaillage-recolte-helleniste'
+    username = ''
+    password = ''
     save_loc = save_loc+'/mean_daily_ekman_currents/'
     print('Downloading Surface Ekman data from GlobCurrent between ' + str(start_yr) + ' and ' + str(end_yr))
     dat = datetime.datetime(start_yr,1,1)
@@ -145,8 +145,8 @@ def downloadekmansurf(save_loc,startyr = 1993,end_yr = 2016):
 def downloadekmandepth(save_loc,startyr = 1993,end_yr = 2016):
     #Function that cyles through the wavewatch archive and downloads the data.
     ftpserver='eftp.ifremer.fr'
-    username = 'gg1f3e8'
-    password = 'pinaillage-recolte-helleniste'
+    username = ''
+    password = ''
     save_loc = save_loc+'/mean_daily_ekman_currents_15m/'
     print('Downloading 15m Ekman data from GlobCurrent between ' + str(start_yr) + ' and ' + str(end_yr))
     dat = datetime.datetime(start_yr,1,1)
@@ -165,8 +165,8 @@ def downloadekmandepth(save_loc,startyr = 1993,end_yr = 2016):
 def downloadgeostrophic(save_loc,startyr = 1993,end_yr = 2016):
     #Function that cyles through the wavewatch archive and downloads the data.
     ftpserver='eftp.ifremer.fr'
-    username = 'gg1f3e8'
-    password = 'pinaillage-recolte-helleniste'
+    username = ''
+    password = ''
     save_loc = save_loc+'/mean_daily_geostrophic_currents/'
     print('Downloading Geostrophic data from GlobCurrent between ' + str(start_yr) + ' and ' + str(end_yr))
     dat = datetime.datetime(start_yr,1,1)
