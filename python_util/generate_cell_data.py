@@ -151,7 +151,7 @@ def generate_cell_data(params, inputDataPath, testPlots=False, verbose=False, ou
         labels = [str(np.around(lat[int(i)])) for i in ytickslocs]
         normalsAx.yaxis.set_ticks(ytickslocs)
         normalsAx.set_yticklabels(labels)
-        normalsFig.savefig('shelf_normals.png',dpi=300)
+        normalsFig.savefig('plots/shelf_normals.png',dpi=300)
         plt.pause(1);
 
 

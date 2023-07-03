@@ -28,13 +28,13 @@ def transform_params(_params, shallowContourDepth):#, errorLevel, repeat):
 
 
 ######################################
-### Test run: 500m shallow, 800m deep.
+### Test run: 500m shallow, 600m deep.
 params = ps.get_example_method_plot_params();
 python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=True, generateShelfCoordinates=True, generateCellData=True, calculateShelfCurrents=True,outputPathOverride='D:/SKIM');
 params = ps.get_example_method_plot_params_64();
 python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=True, generateShelfCoordinates=True, generateCellData=True, calculateShelfCurrents=True,outputPathOverride='D:/SKIM');
-params = ps.get_global_params();
-python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=True, generateShelfCoordinates=True, generateCellData=True, calculateShelfCurrents=True,outputPathOverride='D:/SKIM');
+# params = ps.get_global_params();
+# python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=True, generateShelfCoordinates=True, generateCellData=True, calculateShelfCurrents=True,outputPathOverride='D:/SKIM');
 # #python_util.calc_means.calc_mean_data(params, calculateTable1=False, calculateTable2=True, calculateTable2GasTransferVelocity=True, verbose=True);
 # python_util.calc_means.calc_mean_data(params, calculateTable1=False, calculateTable2=True, calculateTable2GasTransferVelocity=True, verbose=True);
 
@@ -49,24 +49,25 @@ python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=Tr
 
 # #####################################
 # # Sensitivity to shelf contour depth.
-# masterParams = ps.get_global_params();
-# contourDepths = [500];#[300, 400, 500, 600, 700, 800];
+masterParams = ps.get_global_params();
+#contourDepths = [500];#
+contourDepths = [300, 400, 500, 600, 700, 800];
 # errorLevels = [0.05, 0.10, 0.135, 0.15, 0.20];
 # numRepeats = 3;
 #
 # ### Uncomment as neccessary for multiple repeats and uncertainty analysis
 #
 # #for repeat in range(numRepeats):
-# for depth in contourDepths:
-#     #if (repeat == 0) and (depth == 300):
-#     #        continue;
-#     #for errorLevel in errorLevels:
-#         params = transform_params(masterParams, depth);#, errorLevel, repeat);
-#         print params.paramsetName;
-#         #python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordinates=False, generateCellData=True, calculateShelfCurrents=False, withGasTransferCalc=False,outputPathOverride='D:/SKIM');
-#         python_util.calc_means.calc_mean_data(params, calculateTable1=False, calculateTable2=True, calculateTable2GasTransferVelocity=True, verbose=True,outputPath='D:/SKIM');
-#         ##python_util.calc_means.calc_mean_data(params, calculateTable1=False, calculateTable2=True, calculateTable2GasTransferVelocity=True, verbose=True);
-#
-#         ##errorProp = [(errorLevel, errorLevel, 0.0)]; #tupples for (Ekman, geostrophic, stokes)
-#         ##python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordinates=False, generateCellData=False, calculateShelfCurrents=True, withGasTransferCalc=True, errorPropagation=errorProp);
-#         ##python_util.calc_means.calc_mean_data(params, calculateTable1=False, calculateTable2=True, calculateTable2GasTransferVelocity=True, verbose=True);
+for depth in contourDepths:
+    #if (repeat == 0) and (depth == 300):
+    #        continue;
+    #for errorLevel in errorLevels:
+        params = transform_params(masterParams, depth);#, errorLevel, repeat);
+        print params.paramsetName;
+        python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordinates=True, generateCellData=True, calculateShelfCurrents=True, withGasTransferCalc=True,outputPathOverride='D:/SKIM');
+        python_util.calc_means.calc_mean_data(params, calculateTable1=False, calculateTable2=True, calculateTable2GasTransferVelocity=True, verbose=True,outputPath='D:/SKIM');
+        ##python_util.calc_means.calc_mean_data(params, calculateTable1=False, calculateTable2=True, calculateTable2GasTransferVelocity=True, verbose=True);
+
+        ##errorProp = [(errorLevel, errorLevel, 0.0)]; #tupples for (Ekman, geostrophic, stokes)
+        ##python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordinates=False, generateCellData=False, calculateShelfCurrents=True, withGasTransferCalc=True, errorPropagation=errorProp);
+        ##python_util.calc_means.calc_mean_data(params, calculateTable1=False, calculateTable2=True, calculateTable2GasTransferVelocity=True, verbose=True);

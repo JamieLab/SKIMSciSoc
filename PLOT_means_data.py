@@ -53,6 +53,7 @@ def plot_scatter_grid(data,ax,text):
 def load_data(file):
     data = pd.read_excel(file)
     return data
+
 in_fold = 'C:/Users/df391/OneDrive - University of Exeter/Post_Doc_Covex_Seascape/Shutler_Cross_Shelf_Transport/'
 in_files = ['table2data_global_500m_annual.xlsx','table2data_global_500m_winter.xlsx','table2data_global_500m_spring.xlsx','table2data_global_500m_summer.xlsx','table2data_global_500m_autumn.xlsx']
 season = ['Annual','Winter\nBoreal: Jan-Mar\nAustral: Jul-Sep','Spring\nBoreal: Apr-Jun\nAustral: Oct-Dec','Summer\nBoreal: Jul-Sep\nAustral: Jan-Mar','Autumn\nBoreal: Oct-Dec\nAustral: Apr-Jun']
