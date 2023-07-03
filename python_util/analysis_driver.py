@@ -31,7 +31,7 @@ def shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordi
         runDataPath = outputPathOverride;
     else:
         runDataPath = path.join("data", params.paramsetName);
-    
+
     #Create required folders
     if path.exists(runDataPath) == False:
         os.makedirs(runDataPath);
@@ -41,19 +41,19 @@ def shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordi
         os.makedirs(path.join(runDataPath, "gridwise_data"));
     if path.exists(path.join(runDataPath, "current_data")) == False:
         os.makedirs(path.join(runDataPath, "current_data"));
-    
-    
-    
+
+
+
     ###################
     # Make bathymetry #
     ###################
     if generateBathymetry:
         print "Resampling bathymetry.";
-        gebcoDataPath = "input_data/bathymetry_GEBCO/GEBCO_2014_2D.nc";
+        gebcoDataPath = "D:/Data/Bathymetry/GEBCO_2014_2D.nc";
         #gebcoDataPath = "/home/rr/data/GEBCO_bathymetry_30sec/GEBCO_2014_2D.nc";
-        resample_bathymetry.generate_resampled_bathymetry(gebcoDataPath, params.pixelRes, testPlot=True, outputPath=path.join("data"));
-    
-    
+        resample_bathymetry.generate_resampled_bathymetry(gebcoDataPath, params.pixelRes, testPlot=True, outputPath=runDataPath);
+
+
     #########################################
     # Generate shelf-edge coordinates file. #
     #########################################
@@ -61,15 +61,15 @@ def shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordi
         print "Generating shelf path coordinate data.";
         #Create contour plots and select paths to use as the shelf edge coordinates.
         shelf_coord_creator.get_shelf_edge_data(params, testPlots=True, outputPath=runDataPath);
-    
-    
+
+
     ######################
     # Generate cell data #
     ######################
     if generateCellData:
         generate_cell_data.generate_cell_data(params, runDataPath, testPlots=True, verbose=True, outputPath=runDataPath);
-    
-    
+
+
     ###################################
     # Calculate across-shelf currents #
     ###################################
@@ -78,38 +78,3 @@ def shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordi
             calculate_shelf_currents.calculate_shelf_current_data(params, runDataPath, calculateGasTransferVelocity=withGasTransferCalc, testPlot=True, verbose=True, outputPath=runDataPath);
         else:
             calculate_shelf_currents_errprop.calculate_shelf_current_data(params, runDataPath, calculateGasTransferVelocity=withGasTransferCalc, testPlot=True, verbose=True, outputPath=runDataPath, errorProp=errorPropagation);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
