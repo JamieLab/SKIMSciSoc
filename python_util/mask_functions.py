@@ -4,6 +4,11 @@
 Created on Thu Nov 22 14:28:00 2018
 
 @author: rr
+Modified by Daniel J. Ford (d.ford@exeter.ac.uk)
+Date: 03/2023
+Changes:
+- Added list of Laurelle and "our areas" coordinates for plotting purposes (L55-56, L60-61)
+- For Laurelle added the names of each region into a list (L57-8)
 """
 
 import skim_utilities as su;
@@ -28,6 +33,8 @@ area_IrmingerSea = ((-47.0, 58.0), (-17.5, 67.0)); #Irminger Sea
 
 #Laruelle 2018 areas (approx.) (table 2)
 #Laruelle, G. G., Cai, W. J., Hu, X., Gruber, N., Mackenzie, F. T., & Regnier, P. (2018). Continental shelves as a variable but increasing global sink for atmospheric carbon dioxide. Nature communications, 9(1), 454.
+# Boxes stored as lon/lat for left bottom corner, and right top corner.
+# i.e lon1,lat1,lon2,lat2
 laruelle_NorthSea = ((-5.0, 56), (7.0, 64));
 laruelle_EnglishChannel = ((-12.0, 46.5), (1.0, 51.0));
 laruelle_SouthernGreenland = ((-53.0, 59.0), (-44.5, 62));
@@ -45,11 +52,18 @@ laruelle_BeringSea = ((-170.0, 50.0), (-160.0, 56.5));
 #laruelle_IrmingerSea = ((-34.0, 62.75), (-19.25, 65.5));
 laruelle_IrmingerSea = ((-32.0, 61.25), (-25.0, 65.0));
 
+laurelle_area_list = [laruelle_NorthSea,laruelle_EnglishChannel,laruelle_SouthernGreenland,laruelle_AntarcticPeninsula,laruelle_LabradorSea,laruelle_CoastOfJapan,laruelle_CascadianShelf,laruelle_SouthAtlanticBight,
+    laruelle_MidAtlanticBight,laruelle_BarentsSea,laruelle_TasmanianShelf,laruelle_PatagonianShelf,laruelle_BeringSea,laruelle_IrmingerSea]
+laurelle_names = ['North Sea', 'English Channel', 'Southern Greenland', 'Antarctic Peninsula', 'Labrador Sea', 'Coast of Japan', 'Cascadian Shelf', 'South Atlantic Bight', 'Mid Atlantic Bight', 'Barent Sea', 'Tasmanian Shelf',
+    'Patagonia Shelf', 'Bering Sea', 'Irminger Sea']
+
+our_area_list = [area_EuropeanShelf,area_LabradorSea,area_MidAtlanticBight,area_CoastOfJapan,area_Patagonia,area_Tasmania,area_BarentsSea,area_SouthAtlanticBight,area_SouthGreenland,area_AntarcticPeninsula,area_BeringSeaWest,
+    area_BeringSeaEast,area_CascianShelf,area_IrmingerSea]
 
 #Verification of results against literature (table 1)
 verif_PainterHebredes = ((-10.25, 55.25), (-5.75, 59.5));
 verif_YuanSouthAtlanticBight = ((-82.5, 27.0), (-76.0, 34.0));
-verif_FewingsMidAtlanticBight = ((-72.0, 39.0), (-65.5, 46.0)); #This had to be expanded considerably to reach our definition of the shelf edge
+verif_FewingsMidAtlanticBight = ((-72.0, 39.0), (-65.5, 46.0)); #This had to be expanded considerably to reach ourl definition of the shelf edge
 verif_WoodsonCaliforniaCoast = ((-122.5, 36.25), (-121.0, 37.25));
 verif_WaiteEasternIndianOcean = ((112.0, -34.0), (117.0, -30.0));
 verif_WieEastChinaSea = ((120.0, 21.0), (133.0, 34.0));
@@ -60,7 +74,7 @@ def point_in_area(llx, lly, urx, ury, px, py):
         return True;
     else:
         return False;
-    
+
 def empty_mask_function(data, params):
     return data;
 
@@ -69,7 +83,7 @@ def generic_area_mask(allowedAreas, data, params):
     for pointIndex in range(0, len(data)):
         px = data[pointIndex].indexX;
         py = data[pointIndex].indexY;
-        
+
         #Check each area to see if the point falls into one of them
         passed = False;
         for area in allowedAreas:
@@ -80,11 +94,11 @@ def generic_area_mask(allowedAreas, data, params):
                 passed=True;
                 break;
         keep[pointIndex] = passed;
-        
+
     #Only keep points that fell into one of the above areas
     keep = np.array(keep);
     data = list(np.array(data)[keep]);
-    
+
     return data;
 
 def return_area_mask(allowedAreas, data, params):
@@ -92,7 +106,7 @@ def return_area_mask(allowedAreas, data, params):
     for pointIndex in range(0, len(data)):
         px = data[pointIndex].indexX;
         py = data[pointIndex].indexY;
-        
+
         #Check each area to see if the point falls into one of them
         passed = False;
         for area in allowedAreas:
@@ -103,7 +117,7 @@ def return_area_mask(allowedAreas, data, params):
                 passed=True;
                 break;
         keep[pointIndex] = passed;
-        
+
     keep = np.array(keep);
     return keep;
 
@@ -123,7 +137,7 @@ def global_shelf_mask_func(data, params):
     allowedAreas.append( area_BeringSeaEast ); #Bering Sea (East)
     allowedAreas.append( area_IrmingerSea ); #Irminger Sea
     allowedAreas.append( area_CascianShelf ); #Cascian Shelf
-    
+
 #    allowedAreas.append( ((141.0, -45.0), (151.0, -39.0)) ); #Tasmania
 #    allowedAreas.append( ((0.0, 60.0), (75.0, 90.0)) ); #Barents Sea
 #    allowedAreas.append( ((-82.0, 26.0), (-74.0, 36.5)) ); #South Atlantic Bight
@@ -133,13 +147,13 @@ def global_shelf_mask_func(data, params):
 #    allowedAreas.append( ((178.0, 45.0), (180.0, 61.0)) ); #Bering Sea (East)
 #    allowedAreas.append( ((-57.0, 59.0), (-18.5, 67.5)) ); #Irminger Sea
 #    allowedAreas.append( ((-140.0, 40.0), (-120.0, 54.0)) ); #Cascian Shelf
-    
+
 
     keep = np.empty(len(data), dtype=bool);
     for pointIndex in range(0, len(data)):
         px = data[pointIndex].indexX;
         py = data[pointIndex].indexY;
-        
+
         #Check each area to see if the point falls into one of them
         passed = False;
         for area in allowedAreas:
@@ -150,13 +164,13 @@ def global_shelf_mask_func(data, params):
                 passed=True;
                 break;
         keep[pointIndex] = passed;
-        
+
     #Only keep points that fell into one of the above areas
     keep = np.array(keep);
     data = list(np.array(data)[keep]);
-    
+
     return data;
-    
+
 #overrideMaskGapCheck will inhibit checks that the mask represents a contiguous section of the shelf edge
 #allowMulti will return a list of tuples instead, allowing regions with gaps
 def calculate_km_subsection_bounds_along_shelf(wholeShelfX, wholeShelfY, wholeShelfDistances, subsectionBounds, params, testPlot=False):
@@ -165,11 +179,11 @@ def calculate_km_subsection_bounds_along_shelf(wholeShelfX, wholeShelfY, wholeSh
     for pointIndex in range(0, len(wholeShelfX)):
         px = wholeShelfX[pointIndex];
         py = wholeShelfY[pointIndex];
-        
+
         #convert lon/lat to coordinates
         llx, lly = su.convert_lonlat_to_index(subsectionBounds[0][0], subsectionBounds[0][1], params.pixelRes, lon0=params.originLon, lat0=params.originLat);
         urx, ury = su.convert_lonlat_to_index(subsectionBounds[1][0], subsectionBounds[1][1], params.pixelRes, lon0=params.originLon, lat0=params.originLat);
-        
+
         #Check each area to see if the point falls into one of them and set the mask
         if point_in_area(llx, lly, urx, ury, px, py) == True:
             subsetMask[pointIndex] = True;
@@ -188,25 +202,25 @@ def calculate_km_subsection_bounds_along_shelf(wholeShelfX, wholeShelfY, wholeSh
         ilasts.append(i);
     if len(ilasts) != len(ifirsts): #sanity check
         raise RuntimeError("Unequal starts and ends of contiguous blocks in subset filter.");
-    
+
     #convert mask to array
     subsetMask = np.array(subsetMask);
     cumulativeDists = np.cumsum(wholeShelfDistances);
-    
+
     #calculate intercept distances for each contiguous span
     distances = [];
     for i in range(0, len(ifirsts)):
         dist1 = cumulativeDists[ifirsts[i]];
         dist2 = cumulativeDists[ilasts[i]];
         distances.append( (dist1, dist2) );
-    
+
     #plot to perform manual sanity check
     if testPlot:
         import matplotlib.pyplot as plt;
         from netCDF4 import Dataset;
-        
+
         depth = np.flipud(Dataset("data/GEBCO_bathymetry_0.25x0.25deg.nc", 'r').variables["mean_depth"][:]);
-        
+
         plt.figure();
         plt.imshow(depth);
         for i in range(len(distances)):
@@ -215,7 +229,7 @@ def calculate_km_subsection_bounds_along_shelf(wholeShelfX, wholeShelfY, wholeSh
         plt.plot(wholeShelfX, wholeShelfY, 'r');
         plt.xlim(wholeShelfX.min(), wholeShelfX.max());
         plt.ylim(wholeShelfY.max(), wholeShelfY.min());
-    
+
     #return the intercept distances along the shelf boundary
     return distances, subsetMask;
 
@@ -243,7 +257,7 @@ def calculate_km_subsection_bounds_along_shelf(wholeShelfX, wholeShelfY, wholeSh
 #        for pointIndex in range(0, len(data.xs[pathIndex])):
 #            px = data.xs[pathIndex][pointIndex];
 #            py = data.ys[pathIndex][pointIndex];
-#            
+#
 #            #Check each area to see if the point falls into one of them
 #            passed = False;
 #            for area in allowedAreas:
@@ -254,14 +268,11 @@ def calculate_km_subsection_bounds_along_shelf(wholeShelfX, wholeShelfY, wholeSh
 #                    passed=True;
 #                    break;
 #            keep[pointIndex] = passed;
-#        
+#
 #        #Only keep points that fell into one of the above areas
 #        keep = np.array(keep);
 #        data.xs[pathIndex] = list(np.array(data.xs[pathIndex])[keep]);
 #        data.ys[pathIndex] = list(np.array(data.ys[pathIndex])[keep]);
 #        data.coordinatesLists[pathIndex] = list(np.array(data.coordinatesLists[pathIndex])[keep]);
-#    
+#
 #    return data;
-            
-
-
