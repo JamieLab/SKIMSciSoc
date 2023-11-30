@@ -96,7 +96,7 @@ depth = su.apply_mask(depth, None, params.ilatRange, params.ilonRange);
 
 #Reused plot parameters
 fig = plt.figure(figsize=(28,18))
-gs = GridSpec(2,2, figure=fig, wspace=0.15,hspace=0.15,bottom=0.05,top=0.95,left=0.08,right=0.90)
+gs = GridSpec(2,2, figure=fig, wspace=0.15,hspace=0.15,bottom=0.05,top=0.95,left=0.08,right=0.85)
 
 
 ticksize = 25;
@@ -126,13 +126,13 @@ if plotShelfBoundary == True:
     xs = [tup[0] for tup in shelfCoordDataDeep];
     ys = [tup[1] for tup in shelfCoordDataDeep];
     x, y = mapFig(xs, ys);
-    mapFig.plot(x, y, color=(0.75, 0.0, 0.0));
+    mapFig.plot(x, y, color=(0.75, 0.0, 0.0),linewidth=4);
 
     #Shallow contour
     xs = [tup[0] for tup in shelfCoordData];
     ys = [tup[1] for tup in shelfCoordData];
     x, y = mapFig(xs, ys);
-    mapFig.plot(x, y, 'm');
+    mapFig.plot(x, y, 'g',linewidth=4);
     #plt.savefig("plots/method_demonstration/shelf_boundary_2tmp.png");
 ax.text(0.93,1.07,'(a)',transform=ax.transAxes,va='top',fontsize=26,fontweight='bold')
 
@@ -306,7 +306,7 @@ if plotGridIntersects == True:
             colour = 'g';
         else:
             colour = 'y';
-cax = fig.add_axes([0.92, 0.1, 0.03, 0.8])
+cax = fig.add_axes([0.9, 0.1, 0.03, 0.8])
 cbar = fig.colorbar(cs, cax=cax, orientation='vertical')
 cbar.ax.tick_params(labelsize=ticksize)
 cbar.ax.set_ylabel( 'Depth (m)',fontsize=ticksize)

@@ -156,7 +156,7 @@ def plot_function(ax,allData,let):
     cbar.set_label("Total shelf break current ($ms^{-1}$)", fontsize=ticksize);
     #cbar.ax.set_yticklabels(["0.0", "0.5", "1.0"]);
     cbar.ax.tick_params(labelsize=ticksize);
-    ax.text(0.90,0.95,'('+let+')',transform=ax.transAxes,va='top',fontsize=24,fontweight='bold')
+    ax.text(0.94,0.97,'('+let+')',transform=ax.transAxes,va='top',fontsize=24,fontweight='bold')
     #ax.set_title("January, February, March, "+str(params.start_year)+"-"+str(params.end_year), fontsize=ticksize);
     #plt.savefig("plots/current_component_dominance/ekman_vs_geostrophic_123_"+str(params.start_year)+"_"+str(params.end_year)+".pdf");
 

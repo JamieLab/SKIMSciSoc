@@ -245,8 +245,8 @@ if plotEkmanVsGeostrophic:
     cbar.ax.set_yticklabels(["0.0", "0.5", "1.0"]);
     plt.title("July, August, September, "+str(params.start_year)+"-"+str(params.end_year), fontsize=ticksize);
     #plt.savefig("plots/current_component_dominance/ekman_vs_geostrophic_789_"+str(params.start_year)+"_"+str(params.end_year)+".pdf");
-    ax1.text(0.90,0.95,'(a)',transform=ax1.transAxes,va='top',fontsize=18,fontweight='bold')
-    ax2.text(0.90,0.95,'(b)',transform=ax2.transAxes,va='top',fontsize=18,fontweight='bold')
+    ax1.text(0.94,0.97,'(a)',transform=ax1.transAxes,va='top',fontsize=18,fontweight='bold')
+    ax2.text(0.94,0.97,'(b)',transform=ax2.transAxes,va='top',fontsize=18,fontweight='bold')
     fig.savefig("plots/current_component_dominance/ekman_vs_geostrophic_"+str(params.start_year)+"_"+str(params.end_year)+".png",dpi=300);
 
     ###############n#############################
@@ -320,8 +320,8 @@ if plotStokesTotal:
     cbar.ax.set_yticklabels([str(v) for v in ticksToUse]);
     plt.title("July, August, September, "+str(params.start_year)+"-"+str(params.end_year), fontsize=ticksize);
     #plt.savefig("plots/current_component_dominance/stokes_vs_total_789_"+str(params.start_year)+"_"+str(params.end_year)+".pdf");
-    ax1.text(0.90,0.95,'(a)',transform=ax1.transAxes,va='top',fontsize=18,fontweight='bold')
-    ax2.text(0.90,0.95,'(b)',transform=ax2.transAxes,va='top',fontsize=18,fontweight='bold')
+    ax1.text(0.94,0.97,'(a)',transform=ax1.transAxes,va='top',fontsize=18,fontweight='bold')
+    ax2.text(0.94,0.97,'(b)',transform=ax2.transAxes,va='top',fontsize=18,fontweight='bold')
     fig.savefig("plots/current_component_dominance/stokes_vs_total_"+str(params.start_year)+"_"+str(params.end_year)+".png",dpi=300);
 
 if plotTotal:
@@ -386,8 +386,8 @@ if plotTotal:
     cbar.ax.tick_params(labelsize=ticksize);
     plt.title("July, August, September, "+str(params.start_year)+"-"+str(params.end_year), fontsize=ticksize);
 
-    ax1.text(0.90,0.95,'(a)',transform=ax1.transAxes,va='top',fontsize=18,fontweight='bold')
-    ax2.text(0.90,0.95,'(b)',transform=ax2.transAxes,va='top',fontsize=18,fontweight='bold')
+    ax1.text(0.94,0.97,'(a)',transform=ax1.transAxes,va='top',fontsize=18,fontweight='bold')
+    ax2.text(0.94,0.97,'(b)',transform=ax2.transAxes,va='top',fontsize=18,fontweight='bold')
     fig.savefig("plots/current_component_dominance/manuscript.png",dpi=300);
 
 

@@ -25,6 +25,7 @@ from matplotlib.gridspec import GridSpec
 from netCDF4 import Dataset;
 from os import path;
 import pandas as pd;
+import matplotlib.transforms
 
 def get_month_indices(months, numYears):
     indices = [];
@@ -115,7 +116,7 @@ def plot_shelf_section(segmentDistances, data123, data789, xlabel, yRange=None, 
             #raise Exception("saldkfjas");
             textX = section[0] + ((section[1]-section[0]) / 2.0);
             textY = yRange[0]+0.015*(yRange[1]-yRange[0]);
-            ax.text(textX, textY, laruelleSectionNames[isection], weight="bold", color='r');
+            ax.text(textX, textY, laruelleSectionNames[isection], weight="bold", color='r',horizontalalignment='center');
     if ax == []:
         fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(12,5));
     else:
@@ -134,9 +135,9 @@ def plot_shelf_section(segmentDistances, data123, data789, xlabel, yRange=None, 
     l3=ax1.plot(segmentDistances, data123.stokesAcrossShelf, label="stokes", linewidth=linewidth, color=colourStokes);
     l1=ax1.plot(segmentDistances, data123.ekmanAcrossShelf, label="ekman", linewidth=linewidth, color=colourEkman);
     legendElements = [l1[0], l2[0], l3[0]];
-    ax1.legend(handles=legendElements,loc = 2);
-    ax1.set_ylabel(r"Shelf break current ($m s^{-1}$)", fontsize=16);
-    ax1.set_xlabel(xlabel, fontsize=16);
+    ax1.legend(handles=legendElements,loc = 7);
+    ax1.set_ylabel(r"Shelf break current ($m s^{-1}$)");
+    ax1.set_xlabel(xlabel);
     ax1.grid()
     if yRange != None:
         ax1.set_ylim(yRange[0], yRange[1]);
@@ -152,9 +153,9 @@ def plot_shelf_section(segmentDistances, data123, data789, xlabel, yRange=None, 
     l3=ax2.plot(segmentDistances, data789.stokesAcrossShelf, label="stokes", linewidth=linewidth);
     l1=ax2.plot(segmentDistances, data789.ekmanAcrossShelf, label="ekman", linewidth=linewidth);
     legendElements = [l1[0], l2[0], l3[0]];
-    ax2.legend(handles=legendElements,loc=2);
-    ax2.set_ylabel(r"Shelf break  current ($m s^{-1}$)", fontsize=16);
-    ax2.set_xlabel(xlabel, fontsize=16);
+    ax2.legend(handles=legendElements,loc=7);
+    ax2.set_ylabel(r"Shelf break  current ($m s^{-1}$)");
+    ax2.set_xlabel(xlabel);
     ax2.grid()
     if yRange != None:
         ax2.set_ylim(yRange[0], yRange[1]);
@@ -440,8 +441,11 @@ if plotIrmingerSea:
     #plot_shelf_region(data123);
 
 if plot_manuscript:
+    font = {'weight' : 'normal',
+            'size'   : 18}
+    matplotlib.rc('font', **font)
     fig = plt.figure(figsize=(15,15))
-    gs = GridSpec(2,2, figure=fig, wspace=0.33,hspace=0.2,bottom=0.05,top=0.97,left=0.07,right=0.97)
+    gs = GridSpec(2,2, figure=fig, wspace=0.33,hspace=0.2,bottom=0.05,top=0.97,left=0.1,right=0.97)
     ax1 = fig.add_subplot(gs[0,0])
     ax2 = fig.add_subplot(gs[0,1])
 
