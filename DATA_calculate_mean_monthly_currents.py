@@ -21,9 +21,9 @@ import python_util.skim_utilities as su;
 processEkman = False;
 processEkman15m = False;
 processGeostrophic = False;
-processStokes = False;
+processStokes = True;
 processwind = False;
-processHs = True
+processHs = False
 
 processMonthly = True;
 processDaily = False;
@@ -86,46 +86,89 @@ def create_netCDF(filename, variableNames, latRes, lonRes):
 
     return ncout;
 
-def process_ekman_month(year, month):
+def process_ekman_month(year, month,time_cor = 2):
     monthStr = format(month+1, "02d");
     resolution = 0.25;
 
     ekmanU = np.ma.empty( shape=(calendar.monthrange(year,month+1)[1], int(180.0/resolution), int(360.0/resolution)) );
+    ekmanU_err = np.ma.empty( shape=(calendar.monthrange(year,month+1)[1], int(180.0/resolution), int(360.0/resolution)) );
     ekmanV = np.ma.empty( shape=(calendar.monthrange(year,month+1)[1], int(180.0/resolution), int(360.0/resolution)) );
+    ekmanV_err = np.ma.empty( shape=(calendar.monthrange(year,month+1)[1], int(180.0/resolution), int(360.0/resolution)) );
     ekmanCurrent = np.ma.empty( shape=(calendar.monthrange(year,month+1)[1], int(180.0/resolution), int(360.0/resolution)) );
+    ekmanCurrent_err = np.ma.empty( shape=(calendar.monthrange(year,month+1)[1], int(180.0/resolution), int(360.0/resolution)) );
     #for each day in the month, load the input netCDF file and sum the results
     for day in range(0, calendar.monthrange(year,month+1)[1]):
         dayStr = format(day+1, "02d");
         inputData = Dataset(ekmanInputTemplate.safe_substitute(YYYY=str(year), MM=monthStr, DD=dayStr));
         u = np.flipud(inputData.variables["eastward_ekman_current_velocity"][0,:,:]);
+        u_err =  np.abs(np.flipud(inputData.variables["eastward_ekman_current_velocity_error"][0,:,:])); # Need np.abs as some uncertainties are negative...
         v = np.flipud(inputData.variables["northward_ekman_current_velocity"][0,:,:]);
+        v_err = np.abs(np.flipud(inputData.variables["northward_ekman_current_velocity_error"][0,:,:])); # Need np.abs as some uncertainties are negative...
         ekmanU[day,:,:] = u;
+        ekmanU_err[day,:,:] = u_err;
         ekmanV[day,:,:] = v;
-        ekmanCurrent[day,:,:] = np.sqrt(u**2 + v**2);
-
+        ekmanV_err[day,:,:] = v_err;
+        ecur = np.sqrt(u**2 + v**2);
+        ekmanCurrent[day,:,:] = ecur
+        comb_err = ((np.sqrt((((u_err/u)*2)*u)**2 + (((v_err/v)*2)*v)**2)/ecur)*0.5)*ecur # Convert to percentage error, multiply by two to propagate the squared function, convert back to absolute error for the addition where we assume they are independent so combine in quadrature
+        ekmanCurrent_err[day,:,:] = comb_err
+        inputData.close()
     #calculate mean, do any final processing
     ekmanUmean = np.ma.mean(ekmanU, axis=0);
     ekmanUmeanMasked = apply_mask(ekmanUmean, shelfMask, ilatRange, ilonRange);
+
+    ekmanUmean_err = np.ma.mean(ekmanU_err,axis=0) / np.sqrt(calendar.monthrange(year,month+1)[1]/time_cor)
+    ekmanUmeanMasked_err = apply_mask(ekmanUmean_err, shelfMask, ilatRange, ilonRange);
+
     ekmanVmean = np.ma.mean(ekmanV, axis=0);
     ekmanVmeanMasked = apply_mask(ekmanVmean, shelfMask, ilatRange, ilonRange);
+
+    ekmanVmean_err = np.ma.mean(ekmanV_err,axis=0) / np.sqrt(calendar.monthrange(year,month+1)[1]/time_cor)
+    ekmanVmeanMasked_err = apply_mask(ekmanVmean_err, shelfMask, ilatRange, ilonRange);
+
     ekmanCurrentMean = np.ma.mean(ekmanCurrent, axis=0);
     ekmanCurrentMeanMasked = apply_mask(ekmanCurrentMean, shelfMask, ilatRange, ilonRange);
+    ### Code below does a more complex propagation (taking into account correlated periods, and uncorrelated periods) which gets the same as the mean with the sqrt...
+    # ekmancurrent_temp = np.ma.empty( shape=(int(np.ceil(calendar.monthrange(year,month+1)[1]/time_cor)), int(180.0/resolution), int(360.0/resolution))) ;
+    # time_val = np.arange(0,calendar.monthrange(year,month+1)[1],time_cor)
+    # for i in range(0,len(time_val)-1):
+    #     ekmancurrent_temp[i,:,:] = np.ma.mean(ekmanCurrent_err[time_val[i]:time_val[i+1],:,:],axis=0)
+    # ekmancurrent_temp[-1,:,:]= np.ma.mean(ekmanCurrent_err[time_val[i+1]:time_val[-1],:,:],axis=0)
+    # ekmancurrent_temp = np.sqrt(np.ma.sum(ekmancurrent_temp**2,axis=0))/(calendar.monthrange(year,month+1)[1]/time_cor)
+    # ekmanCurrentMean_err = ekmancurrent_temp
+    ekmanCurrentMean_err = np.ma.mean(ekmanCurrent_err,axis=0) / np.sqrt(calendar.monthrange(year,month+1)[1]/time_cor)
+    ekmanCurrentMeanMasked_err = apply_mask(ekmanCurrentMean_err, shelfMask, ilatRange, ilonRange);
 
     #write to netCDF
     ekmanMonthlyOutputPath = ekmanMonthlyOutputTemplate.safe_substitute(YYYY=str(year), MM=monthStr);
-    ncout = create_netCDF(ekmanMonthlyOutputPath, ["ekmanU", "ekmanV", "ekmanCurrent"], latRes=resolution, lonRes=resolution);
+    ncout = create_netCDF(ekmanMonthlyOutputPath, ["ekmanU",'ekmanUerr',"ekmanV",'ekmanVerr',"ekmanCurrent",'ekmanCurrenterr'], latRes=resolution, lonRes=resolution);
 
     ncout.variables["ekmanU"][:] = ekmanUmeanMasked;
     ncout.variables["ekmanU"].long_name = "Mean monthly Ekman surface current velocity (eastward component)";
     ncout.variables["ekmanU"].units = "m s-1";
 
+    ncout.variables["ekmanUerr"][:] = ekmanUmeanMasked_err;
+    ncout.variables["ekmanUerr"].long_name = "Mean monthly Ekman surface current velocity (eastward component) uncertainty";
+    ncout.variables["ekmanUerr"].units = "m s-1";
+    ncout.variables["ekmanUerr"].time_correlation = 'Assumed uncertainties are correlated for ' +str(time_cor) + ' days';
+
     ncout.variables["ekmanV"][:] = ekmanVmeanMasked;
-    ncout.variables["ekmanV"].long_name = "Mean monthly Ekman surface current velocity (westward component)";
+    ncout.variables["ekmanV"].long_name = "Mean monthly Ekman surface current velocity (northward component)";
     ncout.variables["ekmanV"].units = "m s-1";
+
+    ncout.variables["ekmanVerr"][:] = ekmanVmeanMasked_err;
+    ncout.variables["ekmanVerr"].long_name = "Mean monthly Ekman surface current velocity (northward component) uncertainty";
+    ncout.variables["ekmanVerr"].units = "m s-1";
+    ncout.variables["ekmanVerr"].time_correlation = 'Assumed uncertainties are correlated for ' +str(time_cor) + ' days';
 
     ncout.variables["ekmanCurrent"][:] = ekmanCurrentMeanMasked;
     ncout.variables["ekmanCurrent"].long_name = "Mean monthly Ekman surface current velocity";
     ncout.variables["ekmanCurrent"].units = "m s-1";
+
+    ncout.variables["ekmanCurrenterr"][:] = ekmanCurrentMeanMasked_err;
+    ncout.variables["ekmanCurrenterr"].long_name = "Mean monthly Ekman surface current velocity uncertainty";
+    ncout.variables["ekmanCurrenterr"].units = "m s-1";
+    ncout.variables["ekmanCurrenterr"].time_correlation = 'Assumed uncertainties are correlated for ' +str(time_cor) + ' days';
     ncout.close();
 
 
@@ -172,89 +215,169 @@ def process_ekman_15m_month(year, month):
     ncout.close();
 
 
-def process_geostrophic_month(year, month):
+def process_geostrophic_month(year, month,time_cor=2):
     monthStr = format(month+1, "02d");
     resolution = 0.25;
 
     geostrophicU = np.ma.empty( shape=(calendar.monthrange(year,month+1)[1], int(180.0/resolution), int(360.0/resolution)) );
+    geostrophicU_err = np.ma.empty( shape=(calendar.monthrange(year,month+1)[1], int(180.0/resolution), int(360.0/resolution)) );
     geostrophicV = np.ma.empty( shape=(calendar.monthrange(year,month+1)[1], int(180.0/resolution), int(360.0/resolution)) );
+    geostrophicV_err = np.ma.empty( shape=(calendar.monthrange(year,month+1)[1], int(180.0/resolution), int(360.0/resolution)) );
     geostrophicCurrent = np.ma.empty( shape=(calendar.monthrange(year,month+1)[1], int(180.0/resolution), int(360.0/resolution)) );
+    geostrophicCurrent_err = np.ma.empty( shape=(calendar.monthrange(year,month+1)[1], int(180.0/resolution), int(360.0/resolution)) );
     #for each day in the month, load the input netCDF file and sum the results
     for day in range(0, calendar.monthrange(year,month+1)[1]):
         dayStr = format(day+1, "02d");
         inputData = Dataset(geostrophicInputTemplate.safe_substitute(YYYY=str(year), MM=monthStr, DD=dayStr));
         u = np.flipud(inputData.variables["eastward_geostrophic_current_velocity"][0,:,:]);
+        u_err = np.abs(np.flipud(inputData.variables["eastward_geostrophic_current_velocity_error"][0,:,:]));
         v = np.flipud(inputData.variables["northward_geostrophic_current_velocity"][0,:,:]);
+        v_err = np.abs(np.flipud(inputData.variables["northward_geostrophic_current_velocity_error"][0,:,:]));
+        inputData.close()
         geostrophicU[day,:,:] = u;
+        geostrophicU_err[day,:,:] = u_err;
         geostrophicV[day,:,:] = v;
-        geostrophicCurrent[day,:,:] = np.sqrt(u**2 + v**2);
+        geostrophicV_err[day,:,:] = v_err;
+        ecur = np.sqrt(u**2 + v**2);
+        geostrophicCurrent[day,:,:] = ecur
+        comb_err = ((np.sqrt((((u_err/u)*2)*u)**2 + (((v_err/v)*2)*v)**2)/ecur)*0.5)*ecur # Convert to percentage error, multiply by two to propagate the squared function, convert back to absolute error for the addition where we assume they are independent so combine in quadrature
+        geostrophicCurrent_err[day,:,:] = comb_err
 
     #calculate mean, do any final processing
+
     geostrophicUmean = np.ma.mean(geostrophicU, axis=0);
     geostrophicUmeanMasked = apply_mask(geostrophicUmean, shelfMask, ilatRange, ilonRange);
+
+    geostrophicUmean_err = np.ma.mean(geostrophicU_err,axis=0) / np.sqrt(calendar.monthrange(year,month+1)[1]/time_cor)
+    geostrophicUmeanMasked_err = apply_mask(geostrophicUmean_err, shelfMask, ilatRange, ilonRange);
+
     geostrophicVmean = np.ma.mean(geostrophicV, axis=0);
     geostrophicVmeanMasked = apply_mask(geostrophicVmean, shelfMask, ilatRange, ilonRange);
+
+    geostrophicVmean_err = np.ma.mean(geostrophicV_err,axis=0) / np.sqrt(calendar.monthrange(year,month+1)[1]/time_cor)
+    geostrophicVmeanMasked_err = apply_mask(geostrophicVmean_err, shelfMask, ilatRange, ilonRange);
+
     geostrophicCurrentMean = np.ma.mean(geostrophicCurrent, axis=0);
     geostrophicCurrentMeanMasked = apply_mask(geostrophicCurrentMean, shelfMask, ilatRange, ilonRange);
 
+    geostrophicCurrentMean_err = np.ma.mean(geostrophicCurrent_err,axis=0) / np.sqrt(calendar.monthrange(year,month+1)[1]/time_cor)
+    geostrophicCurrentMeanMasked_err = apply_mask(geostrophicCurrentMean_err, shelfMask, ilatRange, ilonRange);
+
     #write to netCDF
     geostrophicMonthlyOutputPath = geostrophicMonthlyOutputTemplate.safe_substitute(YYYY=str(year), MM=monthStr);
-    ncout = create_netCDF(geostrophicMonthlyOutputPath, ["geostrophicU", "geostrophicV", "geostrophicCurrent"], latRes=resolution, lonRes=resolution);
+    ncout = create_netCDF(geostrophicMonthlyOutputPath, ["geostrophicU","geostrophicUerr", "geostrophicV","geostrophicVerr", "geostrophicCurrent","geostrophicCurrenterr"], latRes=resolution, lonRes=resolution);
 
     ncout.variables["geostrophicU"][:] = geostrophicUmeanMasked;
     ncout.variables["geostrophicU"].long_name = "Mean monthly geostrophic surface current velocity (eastward component)";
     ncout.variables["geostrophicU"].units = "m s-1";
 
+    ncout.variables["geostrophicUerr"][:] = geostrophicUmeanMasked_err;
+    ncout.variables["geostrophicUerr"].long_name = "Mean monthly geostrophic surface current velocity (eastward component) uncertainty";
+    ncout.variables["geostrophicUerr"].units = "m s-1";
+    ncout.variables["geostrophicUerr"].time_correlation = 'Assumed uncertainties are correlated for ' +str(time_cor) + ' days';
+
     ncout.variables["geostrophicV"][:] = geostrophicVmeanMasked;
-    ncout.variables["geostrophicV"].long_name = "Mean monthly geostrophic surface current velocity (westward component)";
+    ncout.variables["geostrophicV"].long_name = "Mean monthly geostrophic surface current velocity (northward component)";
     ncout.variables["geostrophicV"].units = "m s-1";
+
+    ncout.variables["geostrophicVerr"][:] = geostrophicVmeanMasked_err;
+    ncout.variables["geostrophicVerr"].long_name = "Mean monthly geostrophic surface current velocity (northward component) uncertainty";
+    ncout.variables["geostrophicVerr"].units = "m s-1";
+    ncout.variables["geostrophicVerr"].time_correlation = 'Assumed uncertainties are correlated for ' +str(time_cor) + ' days';
 
     ncout.variables["geostrophicCurrent"][:] = geostrophicCurrentMeanMasked;
     ncout.variables["geostrophicCurrent"].long_name = "Mean monthly geostrophic surface current velocity";
     ncout.variables["geostrophicCurrent"].units = "m s-1";
+
+    ncout.variables["geostrophicCurrenterr"][:] = geostrophicCurrentMeanMasked_err;
+    ncout.variables["geostrophicCurrenterr"].long_name = "Mean monthly geostrophic surface current velocity uncertainty";
+    ncout.variables["geostrophicCurrenterr"].units = "m s-1";
+    ncout.variables["geostrophicCurrenterr"].time_correlation = 'Assumed uncertainties are correlated for ' +str(time_cor) + ' days';
     ncout.close();
 
 
-def process_stokes_month(year, month):
+def process_stokes_month(year, month,percent_err = 0.2,time_cor=2):
     monthStr = format(month+1, "02d");
     resolution = 0.5;
 
     stokesU = np.ma.empty( shape=(calendar.monthrange(year,month+1)[1]*8, int(180.0/resolution), int(360.0/resolution)) );
+    stokesU[:,:,:] = np.nan
     stokesV = np.ma.empty( shape=(calendar.monthrange(year,month+1)[1]*8, int(180.0/resolution), int(360.0/resolution)) );
+    stokesV[:,:,:] = np.nan
     stokesCurrent = np.ma.empty( shape=(calendar.monthrange(year,month+1)[1]*8, int(180.0/resolution), int(360.0/resolution)) );
+    stokesCurrent[:,:,:] = np.nan
     inputData = Dataset(stokesInputTemplate.safe_substitute(YYYY=str(year), MM=monthStr));
     u = inputData.variables["uuss"][:,:,:];
+
     v = inputData.variables["vuss"][:,:,:];
+
     stokesU[:,24:341,:] = u;
+    u_err = np.abs(stokesU) * percent_err
     stokesV[:,24:341,:] = v;
-    stokesCurrent[:,24:341,:] = np.sqrt(u**2 + v**2);
+    v_err = np.abs(stokesV) * percent_err
+    ecur = np.sqrt(stokesU**2 + stokesV**2);
+    comb_err = ((np.sqrt((((u_err/stokesU)*2)*stokesU)**2 + (((v_err/stokesV)*2)*stokesV)**2)/ecur)*0.5)*ecur # Convert to percentage error, multiply by two to propagate the squared function, convert back to absolute error for the addition where we assume they are independent so combine in quadrature
+
+    stokesCurrent[:,:,:] = np.sqrt(stokesU**2 + stokesV**2);
 
     #calculate mean, do any final processing
     stokesUmean = np.ma.mean(stokesU, axis=0);
     stokesUmean = np.flipud(np.repeat(np.repeat(stokesUmean, 2, axis=0), 2, axis=1));
     stokesUmeanMasked = apply_mask(stokesUmean, shelfMask, ilatRange, ilonRange);
+
+    stokesUmeanerr = np.ma.mean(u_err, axis=0) / np.sqrt(calendar.monthrange(year,month+1)[1]/time_cor);
+    stokesUmeanerr = np.flipud(np.repeat(np.repeat(stokesUmeanerr, 2, axis=0), 2, axis=1));
+    stokesUmeanMaskederr = apply_mask(stokesUmeanerr, shelfMask, ilatRange, ilonRange);
+
     stokesVmean = np.ma.mean(stokesV, axis=0);
     stokesVmean = np.flipud(np.repeat(np.repeat(stokesVmean, 2, axis=0), 2, axis=1));
     stokesVmeanMasked = apply_mask(stokesVmean, shelfMask, ilatRange, ilonRange);
+
+    stokesVmeanerr = np.ma.mean(v_err, axis=0) / np.sqrt(calendar.monthrange(year,month+1)[1]/time_cor);
+    stokesVmeanerr = np.flipud(np.repeat(np.repeat(stokesVmeanerr, 2, axis=0), 2, axis=1));
+    stokesVmeanMaskederr = apply_mask(stokesVmeanerr, shelfMask, ilatRange, ilonRange);
+
     stokesCurrentMean = np.ma.mean(stokesCurrent, axis=0);
     stokesCurrentMean = np.flipud(np.repeat(np.repeat(stokesCurrentMean, 2, axis=0), 2, axis=1));
     stokesCurrentMeanMasked = apply_mask(stokesCurrentMean, shelfMask, ilatRange, ilonRange);
 
+    stokesCurrentmeanerr = np.ma.mean(comb_err, axis=0) / np.sqrt(calendar.monthrange(year,month+1)[1]/time_cor);
+    stokesCurrentmeanerr = np.flipud(np.repeat(np.repeat(stokesCurrentmeanerr, 2, axis=0), 2, axis=1));
+    stokesCurrentmeanMaskederr = apply_mask(stokesCurrentmeanerr, shelfMask, ilatRange, ilonRange);
+
     #write to netCDF
     stokesMonthlyOutputPath = stokesMonthlyOutputTemplate.safe_substitute(YYYY=str(year), MM=monthStr);
-    ncout = create_netCDF(stokesMonthlyOutputPath, ["stokesU", "stokesV", "stokesCurrent"], latRes=resolution/2.0, lonRes=resolution/2.0);
+    ncout = create_netCDF(stokesMonthlyOutputPath, ["stokesU",'stokesUerr', "stokesV",'stokesVerr', "stokesCurrent",'stokesCurrenterr'], latRes=resolution/2.0, lonRes=resolution/2.0);
 
     ncout.variables["stokesU"][:] = stokesUmeanMasked;
     ncout.variables["stokesU"].long_name = "Mean monthly stokes surface current velocity (eastward component)";
     ncout.variables["stokesU"].units = "m s-1";
 
+    ncout.variables["stokesUerr"][:] = stokesUmeanMaskederr;
+    ncout.variables["stokesUerr"].long_name = "Mean monthly stokes surface current velocity (eastward component) uncertainty";
+    ncout.variables["stokesUerr"].units = "m s-1";
+    ncout.variables["stokesUerr"].time_correlation = 'Assumed uncertainties are correlated for ' +str(time_cor) + ' days';
+    ncout.variables["stokesUerr"].fixed_uncertainty = 'Data produced assuming a 20 % uncertainty on the 3 hourly observations from: https://doi.org/10.1016/j.ocemod.2012.12.001';
+
     ncout.variables["stokesV"][:] = stokesVmeanMasked;
-    ncout.variables["stokesV"].long_name = "Mean monthly stokes surface current velocity (westward component)";
+    ncout.variables["stokesV"].long_name = "Mean monthly stokes surface current velocity (northward component)";
     ncout.variables["stokesV"].units = "m s-1";
+
+    ncout.variables["stokesVerr"][:] = stokesVmeanMaskederr;
+    ncout.variables["stokesVerr"].long_name = "Mean monthly stokes surface current velocity (northward component) uncertainty";
+    ncout.variables["stokesVerr"].units = "m s-1";
+    ncout.variables["stokesVerr"].time_correlation = 'Assumed uncertainties are correlated for ' +str(time_cor) + ' days';
+    ncout.variables["stokesVerr"].fixed_uncertainty = 'Data produced assuming a 20 % uncertainty on the 3 hourly observations from: https://doi.org/10.1016/j.ocemod.2012.12.001';
 
     ncout.variables["stokesCurrent"][:] = stokesCurrentMeanMasked;
     ncout.variables["stokesCurrent"].long_name = "Mean monthly stokes surface current velocity";
     ncout.variables["stokesCurrent"].units = "m s-1";
+
+    ncout.variables["stokesCurrenterr"][:] = stokesCurrentmeanMaskederr;
+    ncout.variables["stokesCurrenterr"].long_name = "Mean monthly stokes surface current velocity uncertainty";
+    ncout.variables["stokesCurrenterr"].units = "m s-1";
+    ncout.variables["stokesCurrenterr"].time_correlation = 'Assumed uncertainties are correlated for ' +str(time_cor) + ' days';
+    ncout.variables["stokesCurrenterr"].fixed_uncertainty = 'Data produced assuming a 20 % uncertainty on the 3 hourly observations from: https://doi.org/10.1016/j.ocemod.2012.12.001';
     ncout.close();
 
 def process_wind_month(year, month):

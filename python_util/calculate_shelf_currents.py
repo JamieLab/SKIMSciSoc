@@ -104,11 +104,17 @@ def calculate_shelf_current_data(params, inputDataPath, calculateGasTransferVelo
         #Extract the required variables from the netCDF data and apply region masks
         #data must be present in a consistent format: a 0.25 by 0.25 degree grid, using only the bounded local area.
         ekmanEast = su.apply_mask(ekmanNc.variables["ekmanU"][:, :], None, params.ilatRange, params.ilonRange);
+        ekmanEasterr = su.apply_mask(ekmanNc.variables["ekmanUerr"][:, :], None, params.ilatRange, params.ilonRange);
         ekmanNorth = su.apply_mask(ekmanNc.variables["ekmanV"][:, :], None, params.ilatRange, params.ilonRange);
+        ekmanNortherr = su.apply_mask(ekmanNc.variables["ekmanVerr"][:, :], None, params.ilatRange, params.ilonRange);
         geostrophicEast = su.apply_mask(geostrophicNc.variables["geostrophicU"][:, :], None, params.ilatRange, params.ilonRange);
+        geostrophicEasterr =su.apply_mask(geostrophicNc.variables["geostrophicUerr"][:, :], None, params.ilatRange, params.ilonRange);
         geostrophicNorth = su.apply_mask(geostrophicNc.variables["geostrophicV"][:, :], None, params.ilatRange, params.ilonRange);
+        geostrophicNortherr =su.apply_mask(geostrophicNc.variables["geostrophicVerr"][:, :], None, params.ilatRange, params.ilonRange);
         stokesEast = su.apply_mask(stokesNc.variables["stokesU"][:, :], None, params.ilatRange, params.ilonRange);
+        stokesEasterr = su.apply_mask(stokesNc.variables["stokesUerr"][:, :], None, params.ilatRange, params.ilonRange);
         stokesNorth = su.apply_mask(stokesNc.variables["stokesV"][:, :], None, params.ilatRange, params.ilonRange);
+        stokesNortherr = su.apply_mask(stokesNc.variables["stokesVerr"][:, :], None, params.ilatRange, params.ilonRange);
         uwnd = su.apply_mask(wndNc.variables["uwnd_mean"][:, :], None, params.ilatRange, params.ilonRange);
         vwnd = su.apply_mask(wndNc.variables["vwind_mean"][:, :], None, params.ilatRange, params.ilonRange);
         hs = su.apply_mask(hsNc.variables["hs_mean"][:, :], None, params.ilatRange, params.ilonRange);
@@ -165,12 +171,19 @@ def calculate_shelf_current_data(params, inputDataPath, calculateGasTransferVelo
             indexY = cell.y;
             latDegrees = cell.lat;
             ontoShelfVector = np.array([cell.onshelfX, cell.onshelfY]);
+            alongShelfVector = su.rotate_vector(ontoShelfVector,90)
             segmentDistance = cell.distance;
             sigWaveHeight = hs[indexY, indexX];
 
             ekmanCurrentVector = np.array([ekmanEast[indexY, indexX], ekmanNorth[indexY, indexX]])
+            ekmanuerr = ekmanEasterr[indexY,indexX]
+            ekmanverr = ekmanNortherr[indexY,indexX]
             geostrophicCurrentVector = np.array([geostrophicEast[indexY, indexX], geostrophicNorth[indexY, indexX]]);
+            geostrophicuerr = geostrophicEasterr[indexY,indexX]
+            geostrophicverr = geostrophicNortherr[indexY,indexX]
             stokesCurrentVector = np.array([stokesEast[indexY, indexX], stokesNorth[indexY, indexX]]);
+            stokesuerr = stokesEasterr[indexY,indexX]
+            stokesverr = stokesNortherr[indexY,indexX]
             windspeedVector = np.array([uwnd[indexY, indexX], vwnd[indexY, indexX]]);
 
             cellData.segmentDistance = segmentDistance;
@@ -181,17 +194,71 @@ def calculate_shelf_current_data(params, inputDataPath, calculateGasTransferVelo
             if np.all(np.isfinite(ekmanCurrentVector)) and np.all(np.isfinite(ontoShelfVector)) and np.all(np.isfinite(windspeedVector)) \
               and np.all(np.isfinite(geostrophicCurrentVector)) and np.all(np.isfinite(stokesCurrentVector)):
 
+                def montecarlo_prop(currentvector,u_err,v_err, ontoshelfvector,windspeedvector,latDegrees,ekman = True,ens=100):
+                    """
+                    DJF: Function to propagate u and v errors in the current component through the calculation :-)
+                    """
+                    u_norm = np.random.normal(0, 0.5, ens)
+                    v_norm = np.random.normal(0, 0.5, ens)
+
+                    a = np.zeros((ens))
+                    a[:] = np.nan
+                    for i in range(0,ens):
+                        perturbed_currentVector = currentvector
+                        perturbed_currentVector[0] = perturbed_currentVector[0] + (u_norm[i] * u_err)
+                        perturbed_currentVector[1] = perturbed_currentVector[1] + (v_norm[i] * v_err)
+
+                        if ekman:
+                            a[i] = _calculate_across_shelf_ekman_current(perturbed_currentVector, ontoshelfvector, windspeedvector, latDegrees);
+                        else:
+                            a[i] = _calculate_generic_across_shelf_current(perturbed_currentVector, ontoshelfvector);
+
+                    return np.std(a) * 2
+
+
                 #Calculate the across-shelf current for each component
+                ###Ekman
                 nEkmanAcrossShelf = _calculate_across_shelf_ekman_current(ekmanCurrentVector, ontoShelfVector, windspeedVector, latDegrees);
+                nEkmanAcrossShelferr = montecarlo_prop(ekmanCurrentVector,ekmanuerr,ekmanverr, ontoShelfVector, windspeedVector, latDegrees);
                 cellData.nEkmanAcrossShelf = nEkmanAcrossShelf;
+                cellData.nEkmanAcrossShelferr = nEkmanAcrossShelferr
+                # print(nEkmanAcrossShelf)
+                # print(nEkmanAcrossShelferr)
 
+                nEkmanAlongShelf = _calculate_across_shelf_ekman_current(ekmanCurrentVector, alongShelfVector, windspeedVector, latDegrees);
+                nEkmanAlongShelferr = montecarlo_prop(ekmanCurrentVector,ekmanuerr,ekmanverr, alongShelfVector, windspeedVector, latDegrees);
+
+                cellData.nEkmanAlongShelf = nEkmanAlongShelf;
+                cellData.nEkmanAlongShelferr = nEkmanAlongShelferr
+
+                ### Geostrophic
                 nGeostrophicAcrossShelf = _calculate_generic_across_shelf_current(geostrophicCurrentVector, ontoShelfVector);
+                nGeostrophicAcrossShelferr = montecarlo_prop(geostrophicCurrentVector,geostrophicuerr,geostrophicverr, ontoShelfVector, windspeedVector, latDegrees,ekman=False);
                 cellData.nGeostrophicAcrossShelf = nGeostrophicAcrossShelf;
+                cellData.nGeostrophicAcrossShelferr = nGeostrophicAcrossShelferr;
 
+                nGeostrophicAlongShelf = _calculate_generic_across_shelf_current(geostrophicCurrentVector, alongShelfVector);
+                nGeostrophicAlongShelferr = montecarlo_prop(geostrophicCurrentVector,geostrophicuerr,geostrophicverr, alongShelfVector, windspeedVector, latDegrees,ekman=False);
+                cellData.nGeostrophicAlongShelf = nGeostrophicAlongShelf;
+                cellData.nGeostrophicAlongShelferr = nGeostrophicAlongShelferr;
+
+                ### Stokes
                 nStokesAcrossShelf = _calculate_generic_across_shelf_current(stokesCurrentVector, ontoShelfVector);
+                nStokesAcrossShelferr = montecarlo_prop(stokesCurrentVector,stokesuerr,stokesverr, ontoShelfVector, windspeedVector, latDegrees,ekman=False);
                 cellData.nStokesAcrossShelf = nStokesAcrossShelf;
+                cellData.nStokesAcrossShelferr = nStokesAcrossShelferr;
 
+                nStokesAlongShelf = _calculate_generic_across_shelf_current(stokesCurrentVector, alongShelfVector);
+                nStokesAlongShelferr = montecarlo_prop(stokesCurrentVector,stokesuerr,stokesverr, alongShelfVector, windspeedVector, latDegrees,ekman=False);
+                cellData.nStokesAlongShelf = nStokesAlongShelf;
+                cellData.nStokesAlongShelferr = nStokesAlongShelferr;
+
+                ### Total current
                 cellData.totalcurrent = nEkmanAcrossShelf + nGeostrophicAcrossShelf + nStokesAcrossShelf
+                cellData.totalcurrenterr = np.sqrt(nEkmanAcrossShelferr**2 + nGeostrophicAcrossShelferr**2 + nStokesAcrossShelferr**2) # Assumed independent and uncorrelated
+
+                cellData.totalcurrentalong = nEkmanAlongShelf + nGeostrophicAlongShelf + nStokesAlongShelf
+                cellData.totalcurrentalongerr = np.sqrt(nEkmanAlongShelferr**2 + nGeostrophicAlongShelferr**2 + nStokesAlongShelferr**2) # Assumed independent and uncorrelated
                 #Store the abs (magnitude) of each across-shelf component
                 nEkmanMagnitude = np.abs(nEkmanAcrossShelf); #absolute value of the magnitude across-shelf ekman current
                 cellData.nEkmanMagnitude = nEkmanMagnitude;
@@ -234,8 +301,20 @@ def calculate_shelf_current_data(params, inputDataPath, calculateGasTransferVelo
 
             else:
                 cellData.nEkmanAcrossShelf = np.nan;
+                cellData.nEkmanAcrossShelferr = np.nan
+                cellData.nEkmanAlongShelf = np.nan
+                cellData.nEkmanAlongShelferr = np.nan
+
                 cellData.nGeostrophicAcrossShelf = np.nan;
+                cellData.nGeostrophicAcrossShelferr = np.nan
+                cellData.nGeostrophicAlongShelf = np.nan
+                cellData.nGeostrophicAlongShelferr = np.nan
+
                 cellData.nStokesAcrossShelf = np.nan;
+                cellData.nStokesAcrossShelferr = np.nan
+                cellData.nStokesAlongShelf = np.nan
+                cellData.nStokesAlongShelferr = np.nan
+
                 cellData.nEkmanMagnitude = np.nan;
                 cellData.nGeostrophicMagnitude = np.nan;
                 cellData.nStokesMagnitude = np.nan;
@@ -246,7 +325,11 @@ def calculate_shelf_current_data(params, inputDataPath, calculateGasTransferVelo
                 cellData.windStress = np.nan;
                 cellData.sigWaveHeight = np.nan;
                 cellData.stokesMaskPass = np.nan;
+
                 cellData.totalcurrent = np.nan
+                cellData.totalcurrenterr = np.nan
+                cellData.totalcurrentalong =np.nan
+                cellData.totalcurrentalongerr = np.nan
 
                 cellDataUncertaintyAnalysis.indexX = np.nan;
                 cellDataUncertaintyAnalysis.indexY = np.nan;

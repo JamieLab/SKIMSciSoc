@@ -29,10 +29,13 @@ def transform_params(_params, shallowContourDepth):#, errorLevel, repeat):
 
 ######################################
 ### Test run: 500m shallow, 600m deep.
-params = ps.get_example_method_plot_params();
-python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=True, generateShelfCoordinates=True, generateCellData=True, calculateShelfCurrents=True,outputPathOverride='D:/SKIM');
-params = ps.get_example_method_plot_params_64();
-python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=True, generateShelfCoordinates=True, generateCellData=True, calculateShelfCurrents=True,outputPathOverride='D:/SKIM');
+### Extracts data for methods plots
+# params = ps.get_example_method_plot_params();
+# python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=True, generateShelfCoordinates=True, generateCellData=True, calculateShelfCurrents=True,outputPathOverride='D:/SKIM');
+# params = ps.get_example_method_plot_params_64();
+# python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=True, generateShelfCoordinates=True, generateCellData=True, calculateShelfCurrents=True,outputPathOverride='D:/SKIM');
+
+###Unused?
 # params = ps.get_global_params();
 # python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=True, generateShelfCoordinates=True, generateCellData=True, calculateShelfCurrents=True,outputPathOverride='D:/SKIM');
 # #python_util.calc_means.calc_mean_data(params, calculateTable1=False, calculateTable2=True, calculateTable2GasTransferVelocity=True, verbose=True);
@@ -64,7 +67,7 @@ for depth in contourDepths:
     #for errorLevel in errorLevels:
         params = transform_params(masterParams, depth);#, errorLevel, repeat);
         print params.paramsetName;
-        python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordinates=True, generateCellData=True, calculateShelfCurrents=True, withGasTransferCalc=True,outputPathOverride='D:/SKIM');
+        python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordinates=False, generateCellData=False, calculateShelfCurrents=True, withGasTransferCalc=True,outputPathOverride='D:/SKIM');
         python_util.calc_means.calc_mean_data(params, calculateTable1=False, calculateTable2=True, calculateTable2GasTransferVelocity=True, verbose=True,outputPath='D:/SKIM');
         ##python_util.calc_means.calc_mean_data(params, calculateTable1=False, calculateTable2=True, calculateTable2GasTransferVelocity=True, verbose=True);
 
