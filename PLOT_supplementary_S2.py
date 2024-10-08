@@ -148,7 +148,7 @@ def plot_function(ax,allData,let):
     mapFig.fillcontinents(color=(0.5, 0.5, 0.5), zorder=1);
     mapFig.drawmeridians(np.arange(0, 360, 60), labels=[0,0,0,1], color=(0.3, 0.3, 0.3), fontsize=ticksize);
     mapFig.drawparallels(np.arange(-90, 90, 30), labels=[1,0,0,0], color=(0.3, 0.3, 0.3), fontsize=ticksize);
-    a = mapFig.scatter(lons, lats, latlon=True, c=data.totalcurrent, marker='o', cmap=plt.cm.RdBu,vmin=-0.5,vmax=0.5);
+    a = mapFig.scatter(lons, lats, latlon=True, c=data.totalcurrent, marker='s',s = 5, cmap=plt.cm.RdBu,vmin=-0.5,vmax=0.5);
     #lon1, lat1, lon2, lat2
     plot_laurelle_regions(mapFig,ax)
     cbar = plt.colorbar(a,orientation="vertical",ax=ax) #ticks=[0.0, 0.5, 1.0]);
@@ -162,7 +162,7 @@ def plot_function(ax,allData,let):
 
 ticksize = 19
 resampleFraction = 1
-params = ps.get_current_params();
+params = ps.get_global_params(cmems=True);
 #allData = pickle.load(open(path.join("D:/SKIM", "current_data", "surface_currents_"+params.paramsetName+"_500m.p"), "rb"));
 
 fig = plt.figure(figsize=(30,20))
@@ -172,6 +172,6 @@ ax = [ax1,ax2,ax3,ax4,ax5,ax6]
 l = [300,400,500,600,700,800]
 let = ['a','b','c','d','e','f']
 for lv in range(len(l)):
-    allData = pickle.load(open(path.join("D:/SKIM", "current_data", "surface_currents_"+params.paramsetName+"_" + str(l[lv])+"m.p"), "rb"));
+    allData = pickle.load(open(path.join("E:/SKIM", "current_data", "surface_currents_"+params.paramsetName+"_" + str(l[lv])+"m.p"), "rb"));
     plot_function(ax[lv],allData,let[lv])
 fig.savefig('plots/current_component_dominance/supplementary_fig_s2.png',dpi=300)

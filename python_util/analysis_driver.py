@@ -25,7 +25,7 @@ import os; #for mkdir
 #   generateCellData
 #   calculateShelfCurrents
 #   withGasTransferCalc will calculate k along with shelf currents
-def shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordinates=False, generateCellData=False, calculateShelfCurrents=False, withGasTransferCalc=True, outputPathOverride=None, errorPropagation=None):
+def shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordinates=False, generateCellData=False, calculateShelfCurrents=False, withGasTransferCalc=True, outputPathOverride=None, errorPropagation=None,cmems='False'):
     #Global settings
     if outputPathOverride != None:
         runDataPath = outputPathOverride;
@@ -75,6 +75,6 @@ def shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordi
     ###################################
     if calculateShelfCurrents:
         if errorPropagation == None:
-            calculate_shelf_currents.calculate_shelf_current_data(params, runDataPath, calculateGasTransferVelocity=withGasTransferCalc, testPlot=True, verbose=True, outputPath=runDataPath);
+            calculate_shelf_currents.calculate_shelf_current_data(params, runDataPath, calculateGasTransferVelocity=withGasTransferCalc, testPlot=True, verbose=True, outputPath=runDataPath,cmems = cmems);
         else:
             calculate_shelf_currents_errprop.calculate_shelf_current_data(params, runDataPath, calculateGasTransferVelocity=withGasTransferCalc, testPlot=True, verbose=True, outputPath=runDataPath, errorProp=errorPropagation);

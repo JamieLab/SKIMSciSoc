@@ -75,7 +75,7 @@ def _calculate_wind_stress(windspeedVector, alongShelfDirection=None):
     return windStress;
 
 
-def calculate_shelf_current_data(params, inputDataPath, calculateGasTransferVelocity=False, testPlot=False, verbose=False, outputPath=None):
+def calculate_shelf_current_data(params, inputDataPath, calculateGasTransferVelocity=False, testPlot=False, verbose=False, outputPath=None,cmems = 'False'):
     #Get time span as (month, year) pairs
     monthYears = _calc_month_years(params);
 
@@ -103,21 +103,93 @@ def calculate_shelf_current_data(params, inputDataPath, calculateGasTransferVelo
 
         #Extract the required variables from the netCDF data and apply region masks
         #data must be present in a consistent format: a 0.25 by 0.25 degree grid, using only the bounded local area.
-        ekmanEast = su.apply_mask(ekmanNc.variables["ekmanU"][:, :], None, params.ilatRange, params.ilonRange);
-        ekmanEasterr = su.apply_mask(ekmanNc.variables["ekmanUerr"][:, :], None, params.ilatRange, params.ilonRange);
-        ekmanNorth = su.apply_mask(ekmanNc.variables["ekmanV"][:, :], None, params.ilatRange, params.ilonRange);
-        ekmanNortherr = su.apply_mask(ekmanNc.variables["ekmanVerr"][:, :], None, params.ilatRange, params.ilonRange);
-        geostrophicEast = su.apply_mask(geostrophicNc.variables["geostrophicU"][:, :], None, params.ilatRange, params.ilonRange);
-        geostrophicEasterr =su.apply_mask(geostrophicNc.variables["geostrophicUerr"][:, :], None, params.ilatRange, params.ilonRange);
-        geostrophicNorth = su.apply_mask(geostrophicNc.variables["geostrophicV"][:, :], None, params.ilatRange, params.ilonRange);
-        geostrophicNortherr =su.apply_mask(geostrophicNc.variables["geostrophicVerr"][:, :], None, params.ilatRange, params.ilonRange);
-        stokesEast = su.apply_mask(stokesNc.variables["stokesU"][:, :], None, params.ilatRange, params.ilonRange);
-        stokesEasterr = su.apply_mask(stokesNc.variables["stokesUerr"][:, :], None, params.ilatRange, params.ilonRange);
-        stokesNorth = su.apply_mask(stokesNc.variables["stokesV"][:, :], None, params.ilatRange, params.ilonRange);
-        stokesNortherr = su.apply_mask(stokesNc.variables["stokesVerr"][:, :], None, params.ilatRange, params.ilonRange);
-        uwnd = su.apply_mask(wndNc.variables["uwnd_mean"][:, :], None, params.ilatRange, params.ilonRange);
-        vwnd = su.apply_mask(wndNc.variables["vwind_mean"][:, :], None, params.ilatRange, params.ilonRange);
-        hs = su.apply_mask(hsNc.variables["hs_mean"][:, :], None, params.ilatRange, params.ilonRange);
+        #Using orginial data
+        if cmems == 'False':
+            ekmanEast = su.apply_mask(ekmanNc.variables["ekmanU"][:, :], None, params.ilatRange, params.ilonRange);
+            ekmanEasterr = su.apply_mask(ekmanNc.variables["ekmanUerr"][:, :], None, params.ilatRange, params.ilonRange);
+            ekmanNorth = su.apply_mask(ekmanNc.variables["ekmanV"][:, :], None, params.ilatRange, params.ilonRange);
+            ekmanNortherr = su.apply_mask(ekmanNc.variables["ekmanVerr"][:, :], None, params.ilatRange, params.ilonRange);
+            geostrophicEast = su.apply_mask(geostrophicNc.variables["geostrophicU"][:, :], None, params.ilatRange, params.ilonRange);
+            geostrophicEasterr =su.apply_mask(geostrophicNc.variables["geostrophicUerr"][:, :], None, params.ilatRange, params.ilonRange);
+            geostrophicNorth = su.apply_mask(geostrophicNc.variables["geostrophicV"][:, :], None, params.ilatRange, params.ilonRange);
+            geostrophicNortherr =su.apply_mask(geostrophicNc.variables["geostrophicVerr"][:, :], None, params.ilatRange, params.ilonRange);
+        elif cmems == 'glorysv12_high':
+            geostrophicEast = su.apply_mask(np.flip(np.squeeze(geostrophicNc.variables["uo"][0,:, :]),axis=0), None, params.ilatRange, params.ilonRange);
+            geostrophicNorth = su.apply_mask(np.flip(np.squeeze(geostrophicNc.variables["vo"][0,:, :]),axis=0), None, params.ilatRange, params.ilonRange);
+
+            ekmanEast = np.zeros((geostrophicEast.shape))
+            ekmanNorth = np.copy(ekmanEast)
+            ekmanEasterr = np.copy(ekmanEast)
+            ekmanNortherr = np.copy(ekmanEast)
+            geostrophicEasterr = np.copy(ekmanEast)
+            geostrophicNortherr = np.copy(ekmanEast)
+            stokesEast = np.copy(ekmanEast)
+            stokesEasterr = np.copy(ekmanEast)
+            stokesNorth = np.copy(ekmanEast)
+            stokesNortherr = np.copy(ekmanEast)
+            uwnd = np.copy(ekmanEast)
+            vwnd = np.copy(ekmanEast)
+            hs = np.copy(ekmanEast)
+        elif cmems == 'glorysv12_low':
+            geostrophicEast = su.apply_mask(np.flip(np.transpose(np.squeeze(geostrophicNc.variables["uo"][:, :])),axis=0), None, params.ilatRange, params.ilonRange);
+            geostrophicNorth = su.apply_mask(np.flip(np.transpose(np.squeeze(geostrophicNc.variables["vo"][:, :])),axis=0), None, params.ilatRange, params.ilonRange);
+
+            ekmanEast = np.zeros((geostrophicEast.shape))
+            ekmanNorth = np.copy(ekmanEast)
+            ekmanEasterr = np.copy(ekmanEast)
+            ekmanNortherr = np.copy(ekmanEast)
+            geostrophicEasterr = np.copy(ekmanEast)
+            geostrophicNortherr = np.copy(ekmanEast)
+            stokesEast = np.copy(ekmanEast)
+            stokesEasterr = np.copy(ekmanEast)
+            stokesNorth = np.copy(ekmanEast)
+            stokesNortherr = np.copy(ekmanEast)
+            uwnd = np.copy(ekmanEast)
+            vwnd = np.copy(ekmanEast)
+            hs = np.copy(ekmanEast)
+        else: #CMEMS Globcurrent - all data is in the same file
+            ekmanEast = su.apply_mask(np.flip(np.squeeze(ekmanNc.variables["ue"][0,0,:, :]),axis=0), None, params.ilatRange, params.ilonRange);
+            #CMEMS data has some wierd gaps in the uncertainty info. (I think the k-means clustering must fail) - we therefore fill these with the mean global uncertainty...
+            ekmanEasterr = np.flip(np.squeeze(ekmanNc.variables["err_ue"][0,0,:, :]),axis=0)
+            ekmanEasterr.mask[ekmanEasterr.data>32000] = 0
+            ekmanEasterr.data[ekmanEasterr.data>32000] = 0.1
+            ekmanEasterr = su.apply_mask(ekmanEasterr, None, params.ilatRange, params.ilonRange);
+
+
+            ekmanNorth = su.apply_mask(np.flip(np.squeeze(ekmanNc.variables["ve"][0,0,:, :]),axis=0), None, params.ilatRange, params.ilonRange);
+
+            ekmanNortherr = np.flip(np.squeeze(ekmanNc.variables["err_ve"][0,0,:, :]),axis=0)
+            ekmanNortherr.mask[ekmanNortherr.data>32000] = 0
+            ekmanNortherr.data[ekmanNortherr.data>32000] = 0.1
+            ekmanNortherr = su.apply_mask(ekmanNortherr, None, params.ilatRange, params.ilonRange);
+
+            geostrophicEast = su.apply_mask(np.flip(np.squeeze(ekmanNc.variables["ugos"][0,:, :]),axis=0), None, params.ilatRange, params.ilonRange);
+
+            geostrophicEasterr = np.flip(np.squeeze(ekmanNc.variables["err_ugos"][0,0,:, :]),axis=0)
+            geostrophicEasterr.mask[geostrophicEasterr.data>32000] = 0
+            geostrophicEasterr.data[geostrophicEasterr.data>32000] = 0.1
+
+            geostrophicEasterr =su.apply_mask(geostrophicEasterr, None, params.ilatRange, params.ilonRange);
+            geostrophicNorth = su.apply_mask(np.flip(np.squeeze(ekmanNc.variables["vgos"][0,:, :]),axis=0), None, params.ilatRange, params.ilonRange);
+
+            geostrophicNortherr = np.flip(np.squeeze(ekmanNc.variables["err_vgos"][0,0,:, :]),axis=0)
+            geostrophicNortherr.mask[geostrophicNortherr.data>32000] = 0
+            geostrophicNortherr.data[geostrophicNortherr.data>32000] = 0.1
+            geostrophicNortherr =su.apply_mask(geostrophicNortherr, None, params.ilatRange, params.ilonRange);
+
+
+
+
+
+
+        if cmems != 'glorysv12_high':
+            stokesEast = su.apply_mask(stokesNc.variables["stokesU"][:, :], None, params.ilatRange, params.ilonRange);
+            stokesEasterr = su.apply_mask(stokesNc.variables["stokesUerr"][:, :], None, params.ilatRange, params.ilonRange);
+            stokesNorth = su.apply_mask(stokesNc.variables["stokesV"][:, :], None, params.ilatRange, params.ilonRange);
+            stokesNortherr = su.apply_mask(stokesNc.variables["stokesVerr"][:, :], None, params.ilatRange, params.ilonRange);
+            uwnd = su.apply_mask(wndNc.variables["uwnd_mean"][:, :], None, params.ilatRange, params.ilonRange);
+            vwnd = su.apply_mask(wndNc.variables["vwind_mean"][:, :], None, params.ilatRange, params.ilonRange);
+            hs = su.apply_mask(hsNc.variables["hs_mean"][:, :], None, params.ilatRange, params.ilonRange);
 
         #If calculating k we need to read in sst
         if calculateGasTransferVelocity:
@@ -194,7 +266,7 @@ def calculate_shelf_current_data(params, inputDataPath, calculateGasTransferVelo
             if np.all(np.isfinite(ekmanCurrentVector)) and np.all(np.isfinite(ontoShelfVector)) and np.all(np.isfinite(windspeedVector)) \
               and np.all(np.isfinite(geostrophicCurrentVector)) and np.all(np.isfinite(stokesCurrentVector)):
 
-                def montecarlo_prop(currentvector,u_err,v_err, ontoshelfvector,windspeedvector,latDegrees,ekman = True,ens=100):
+                def montecarlo_prop(currentvector,u_err,v_err, ontoshelfvector,windspeedvector,latDegrees,ekman = True,ens=50):
                     """
                     DJF: Function to propagate u and v errors in the current component through the calculation :-)
                     """
@@ -213,7 +285,7 @@ def calculate_shelf_current_data(params, inputDataPath, calculateGasTransferVelo
                         else:
                             a[i] = _calculate_generic_across_shelf_current(perturbed_currentVector, ontoshelfvector);
 
-                    return np.std(a) * 2
+                    return np.nanstd(a) * 2
 
 
                 #Calculate the across-shelf current for each component

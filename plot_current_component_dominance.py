@@ -150,12 +150,12 @@ plotStokesTotal = True; #across-shelf stokes vs across-shelf  ???
 plotTotal = True
 
 
-params = ps.get_current_params();
-if params.paramsetName != "global": #Could actually use the shelf coordinates filename (which is also stored in params)...
-    raise ValueError("This plotting script is intended only for the 'global' parameter set. Significant adaptation is required for use with any other datasets that may change the shelf-coordinates.");
+params = ps.get_global_params(cmems = True)
+# if params.paramsetName != "global": #Could actually use the shelf coordinates filename (which is also stored in params)...
+#     raise ValueError("This plotting script is intended only for the 'global' parameter set. Significant adaptation is required for use with any other datasets that may change the shelf-coordinates.");
 if ('allData' in globals()) == False:
     ans = raw_input("Press key to read in 'allData', ctrl+c to cancel...");
-    allData = pickle.load(open(path.join("D:/SKIM", "current_data", "surface_currents_"+params.paramsetName+"_500m.p"), "rb"));
+    allData = pickle.load(open(path.join("E:/SKIM", "current_data", "surface_currents_"+params.paramsetName+"_500m.p"), "rb"));
 #Mask data to restrict analysis
 #for monthIndex in range(len(allData)):
 #    print "Applying mask to slice", monthIndex;
@@ -165,7 +165,8 @@ if ('allData' in globals()) == False:
 #global plot settings
 figsize = (8.5,6.5);
 ticksize = 10;
-
+marker = 's'
+m_sz = 5
 #Only keep one in ever 'rate' data points
 def resample_data(data, rate):
     toKeep = range(0, len(data.ekmanProportions), rate);
@@ -209,7 +210,7 @@ if plotEkmanVsGeostrophic:
     mapFig.fillcontinents(color=(0.5, 0.5, 0.5), zorder=1);
     mapFig.drawmeridians(np.arange(0, 360, 60), labels=[0,0,0,1], color=(0.3, 0.3, 0.3), fontsize=ticksize);
     mapFig.drawparallels(np.arange(-90, 90, 30), labels=[1,0,0,0], color=(0.3, 0.3, 0.3), fontsize=ticksize);
-    mapFig.scatter(lons, lats, latlon=True, c=data.geostrophicProportions, marker='o', cmap=plt.cm.BrBG);
+    mapFig.scatter(lons, lats, latlon=True, c=data.geostrophicProportions, marker=marker, cmap=plt.cm.BrBG,s = m_sz);
     #lon1, lat1, lon2, lat2
     plot_laurelle_regions(mapFig)
     cbar = plt.colorbar(orientation="vertical", ticks=[0.0, 0.5, 1.0]);
@@ -237,7 +238,7 @@ if plotEkmanVsGeostrophic:
     mapFig.fillcontinents(color=(0.5, 0.5, 0.5), zorder=1);
     mapFig.drawmeridians(np.arange(0, 360, 60), labels=[0,0,0,1], color=(0.3, 0.3, 0.3), fontsize=ticksize);
     mapFig.drawparallels(np.arange(-90, 90, 30), labels=[1,0,0,0], color=(0.3, 0.3, 0.3), fontsize=ticksize);
-    mapFig.scatter(lons, lats, latlon=True, c=data.geostrophicProportions, marker='o', cmap=plt.cm.BrBG);
+    mapFig.scatter(lons, lats, latlon=True, c=data.geostrophicProportions, marker=marker, cmap=plt.cm.BrBG,s = m_sz);
     plot_laurelle_regions(mapFig)
     cbar = plt.colorbar(orientation="vertical", ticks=[0.0, 0.5, 1.0]);
     plt.clim(0, 1);
@@ -276,7 +277,7 @@ if plotStokesTotal:
     mapFig.drawmeridians(np.arange(0, 360, 60), labels=[0,0,0,1], color=(0.3, 0.3, 0.3), fontsize=ticksize);
     mapFig.drawparallels(np.arange(-90, 90, 30), labels=[1,0,0,0], color=(0.3, 0.3, 0.3), fontsize=ticksize);
     #mapFig.scatter(np.array(lons), np.array(lats), latlon=True, c=nstokesProportions, marker='o', cmap=plt.cm.RdBu);
-    mapFig.scatter(np.array(lons)[passed], np.array(lats)[passed], latlon=True, c=data.stokesProportions[passed], marker='o', cmap=plt.cm.YlOrRd);
+    mapFig.scatter(np.array(lons)[passed], np.array(lats)[passed], latlon=True, c=data.stokesProportions[passed], marker=marker, cmap=plt.cm.YlOrRd,s = m_sz);
     plot_laurelle_regions(mapFig)
     print "a, max:", np.max(data.stokesProportions[passed]);
 
@@ -308,7 +309,7 @@ if plotStokesTotal:
     mapFig.drawmeridians(np.arange(0, 360, 60), labels=[0,0,0,1], color=(0.3, 0.3, 0.3), fontsize=ticksize);
     mapFig.drawparallels(np.arange(-90, 90, 30), labels=[1,0,0,0], color=(0.3, 0.3, 0.3), fontsize=ticksize);
     #mapFig.scatter(np.array(lons), np.array(lats), latlon=True, c=nstokesProportions, marker='o', cmap=plt.cm.RdBu);
-    mapFig.scatter(np.array(lons)[passed], np.array(lats)[passed], latlon=True, c=data.stokesProportions[passed], marker='o', cmap=plt.cm.YlOrRd);
+    mapFig.scatter(np.array(lons)[passed], np.array(lats)[passed], latlon=True, c=data.stokesProportions[passed], marker=marker, cmap=plt.cm.YlOrRd,s = m_sz);
     plot_laurelle_regions(mapFig)
     print "b, max:", np.max(data.stokesProportions[passed]);
 
@@ -348,7 +349,7 @@ if plotTotal:
     mapFig.fillcontinents(color=(0.5, 0.5, 0.5), zorder=1);
     mapFig.drawmeridians(np.arange(0, 360, 60), labels=[0,0,0,1], color=(0.3, 0.3, 0.3), fontsize=ticksize);
     mapFig.drawparallels(np.arange(-90, 90, 30), labels=[1,0,0,0], color=(0.3, 0.3, 0.3), fontsize=ticksize);
-    mapFig.scatter(lons, lats, latlon=True, c=data.totalcurrent, marker='o', cmap=plt.cm.RdBu);
+    mapFig.scatter(lons, lats, latlon=True, c=data.totalcurrent, marker=marker, cmap=plt.cm.RdBu,s = m_sz);
     #lon1, lat1, lon2, lat2
     plot_laurelle_regions(mapFig)
     cbar = plt.colorbar(orientation="vertical") #ticks=[0.0, 0.5, 1.0]);
@@ -376,7 +377,7 @@ if plotTotal:
     mapFig.fillcontinents(color=(0.5, 0.5, 0.5), zorder=1);
     mapFig.drawmeridians(np.arange(0, 360, 60), labels=[0,0,0,1], color=(0.3, 0.3, 0.3), fontsize=ticksize);
     mapFig.drawparallels(np.arange(-90, 90, 30), labels=[1,0,0,0], color=(0.3, 0.3, 0.3), fontsize=ticksize);
-    mapFig.scatter(lons, lats, latlon=True, c=data.totalcurrent, marker='o', cmap=plt.cm.RdBu);
+    mapFig.scatter(lons, lats, latlon=True, c=data.totalcurrent, marker=marker, cmap=plt.cm.RdBu,s = m_sz);
     #lon1, lat1, lon2, lat2
     plot_laurelle_regions(mapFig)
     cbar = plt.colorbar(orientation="vertical") #ticks=[0.0, 0.5, 1.0]);

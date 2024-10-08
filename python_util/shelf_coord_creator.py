@@ -76,6 +76,7 @@ def _test_plot_coordinate_data(coordData, depth, title):
 #Stores the number of straigh line approximations to use in a file
 def get_shelf_edge_data(params, testPlots=False, outputPath=None):
     ilatRange = params.ilatRange; #(50,225);
+    print(ilatRange)
     ilonRange = params.ilonRange; #(600, 850)
 
     #Load depth dataset
@@ -84,7 +85,9 @@ def get_shelf_edge_data(params, testPlots=False, outputPath=None):
     depth = su.apply_mask(depth, None, ilatRange, ilonRange);
     lat = bathy.variables["lat"][ilatRange[0]:ilatRange[1]];
     lon = bathy.variables["lon"][ilonRange[0]:ilonRange[1]];
-
+    print(depth.shape)
+    print(lat.shape)
+    print(lon.shape)
 
     #Get shallow shelf coordinates
     shallowShelfCoordinateData = _extract_contour_paths(depth, lon, lat, params.shallowDepth, params.minContourPathSizeShallow, params.numLineApproximationFunction, verbose=True);

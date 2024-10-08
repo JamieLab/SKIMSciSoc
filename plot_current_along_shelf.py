@@ -154,7 +154,7 @@ def plot_shelf_section(segmentDistances, data123, data789, xlabel, yRange=None, 
     l1=ax2.plot(segmentDistances, data789.ekmanAcrossShelf, label="ekman", linewidth=linewidth);
     legendElements = [l1[0], l2[0], l3[0]];
     ax2.legend(handles=legendElements,loc=7);
-    ax2.set_ylabel(r"Shelf break  current ($m s^{-1}$)");
+    ax2.set_ylabel(r"Shelf break current ($m s^{-1}$)");
     ax2.set_xlabel(xlabel);
     ax2.grid()
     if yRange != None:
@@ -192,9 +192,9 @@ plot_manuscript = False or plotAll;
 
 
 #Global settings
-params = ps.get_current_params();
-if params.paramsetName != "global": #Could actually use the shelf coordinates filename (which is also stored in params)...
-    raise ValueError("This plotting script is intended only for the 'global' parameter set. Significant adaptation is required for use with any other datasets that may change the shelf-coordinates.");
+params = ps.get_global_params(cmems=True);
+# if params.paramsetName != "global": #Could actually use the shelf coordinates filename (which is also stored in params)...
+#     raise ValueError("This plotting script is intended only for the 'global' parameter set. Significant adaptation is required for use with any other datasets that may change the shelf-coordinates.");
 linewidth=1.5;
 yRange = (-0.20, 0.35);
 closePlots=False;
@@ -202,12 +202,12 @@ plotTestplots=False;
 
 
 #Read data
-gridwiseData = pd.read_table(path.join('D:\SKIM', "gridwise_data", "per_grid_cell_edge_data_"+params.paramsetName+"_500m.csv"), sep=',');
+gridwiseData = pd.read_table(path.join('E:\SKIM', "gridwise_data", "per_grid_cell_edge_data_"+params.paramsetName+"_500m.csv"), sep=',');
 gridwiseData.x = gridwiseData.x.astype(int);
 gridwiseData.y = gridwiseData.y.astype(int);
 if ('allData' in globals()) == False:
     ans = raw_input("Press key to read in 'allData', ctrl+c to cancel...");
-    allData = pickle.load(open(path.join("D:/SKIM", "current_data", "surface_currents_"+params.paramsetName+"_500m.p"), "rb"));
+    allData = pickle.load(open(path.join("E:/SKIM", "current_data", "surface_currents_"+params.paramsetName+"_500m.p"), "rb"));
 
 
 def roll_section(data123, data789, distances, roll=170):

@@ -214,16 +214,24 @@ def print_statistics(data, distances, name, mask, gasTransferParameterisation=Fa
     geo = data.geostrophicVals[mask,:];
     stokes = data.stokesVals[mask,:];
 
+    eks = data.ekmanAcrossShelf[mask]
+    geo = data.geostrophicAcrossShelf[mask]
+    stokes = data.stokesAcrossShelf[mask]
+
     #distances = np.array(distances);
     if (len(distances) != len(eks)):
         raise ValueError("distances must be the same length as data values");
 
-    weights = np.transpose(np.array([distances]*eks.shape[1]));
+    #weights = np.transpose(np.array([distances]*eks.shape[1]));
+    weights = np.array(distances)
 
     if gasTransferParameterisation:
-        ks = data.kVals[mask,:];
+        #ks = data.kVals[mask,:];
+        ks = np.nanmean(data.kVals,axis=1)
+        ks = ks[mask]
         notnan = np.where(np.isnan(ks)==False);
         kMean, kSD = weighted_avg_and_std(ks[notnan], weights=weights[notnan])
+        kmean_n = len(notnan[0])
         # kStats = DescrStatsW(ks[notnan], weights=weights[notnan], ddof=0);
         # kMean = kStats.mean;
         # kSD = kStats.std;
@@ -243,6 +251,7 @@ def print_statistics(data, distances, name, mask, gasTransferParameterisation=Fa
     # eksMean = eksStats.mean;
     # eksSD = eksStats.std;
     eksMean,eksSD = weighted_avg_and_std(eksProps[notnan], weights=weights[notnan])
+    eksMean_n = len(notnan[0])
 
     notnan = np.where(np.isnan(geoProps)==False);
     # geoStats = DescrStatsW(geoProps[notnan], weights=weights[notnan], ddof=0);
@@ -250,6 +259,7 @@ def print_statistics(data, distances, name, mask, gasTransferParameterisation=Fa
     # geoSD = geoStats.std;
     meanGeo, stdGeo = weighted_avg_and_std(geo[notnan], weights=weights[notnan])
     geoMean, geoSD =weighted_avg_and_std(geoProps[notnan], weights=weights[notnan])
+    geoMean_n = len(notnan[0])
 
     notnan = np.where(np.isnan(stokesProps)==False);
     # stokesStats = DescrStatsW(stokesProps[notnan], weights=weights[notnan], ddof=0);
@@ -257,6 +267,7 @@ def print_statistics(data, distances, name, mask, gasTransferParameterisation=Fa
     # stokesSD = stokesStats.std;
     meanStokes, stdStokes = weighted_avg_and_std(stokes[notnan], weights=weights[notnan])
     stokesMean, stokesSD =weighted_avg_and_std(stokesProps[notnan], weights=weights[notnan])
+    stokesMean_n = len(notnan[0])
     print name, "mean absolute"
     print "\tEkman: ", meanEks, "+/-", stdEks;
     print "\tGeostrophic: ", meanGeo, "+/-", stdGeo;
@@ -275,6 +286,7 @@ def print_statistics(data, distances, name, mask, gasTransferParameterisation=Fa
     # totalMean = totalOntoShelfStats.mean;
     # totalSD = totalOntoShelfStats.std;
     totalMean, totalSD =weighted_avg_and_std(totalOntoShelf[notnan], weights=weights[notnan])
+    totalMean_n = len(notnan[0])
 
     eksPercent = eks / totalOntoShelf * 100.0;
     geoPercent = geo / totalOntoShelf * 100.0;
@@ -285,20 +297,21 @@ def print_statistics(data, distances, name, mask, gasTransferParameterisation=Fa
     # eksPercentMean = eksPercentStats.mean;
     # eksPercentSD = eksPercentStats.std;
     eksPercentMean, eksPercentSD =weighted_avg_and_std(eksPercent[notnan], weights=weights[notnan])
-
+    eksPercent_n = len(notnan[0])
 
     notnan = np.where(np.isnan(geoPercent)==False);
     # geoPercentStats = DescrStatsW(geoPercent[notnan], weights=weights[notnan], ddof=0);
     # geoPercentMean = geoPercentStats.mean;
     # geoPercentSD = geoPercentStats.std;
     geoPercentMean, geoPercentSD =weighted_avg_and_std(geoPercent[notnan], weights=weights[notnan])
+    geoPercent_n = len(notnan[0])
 
     notnan = np.where(np.isnan(stokesPercent)==False);
     # stokesPercentStats = DescrStatsW(stokesPercent[notnan], weights=weights[notnan], ddof=0);
     # stokesPercentMean = stokesPercentStats.mean;
     # stokesPercentSD = stokesPercentStats.std;
     stokesPercentMean, stokesPercentSD =weighted_avg_and_std(stokesPercent[notnan], weights=weights[notnan])
-
+    stokesPercent_n = len(notnan[0])
 
     print name, "percentage total onto-shelf current";
     print "\tEkman: ", eksPercentMean, "+/-", eksPercentSD;
@@ -308,15 +321,17 @@ def print_statistics(data, distances, name, mask, gasTransferParameterisation=Fa
     print "";
 
     if gasTransferParameterisation:
-        return (name, totalMean, totalSD, meanEks, stdEks, meanGeo,stdGeo,meanStokes, stdStokes, eksMean, eksSD, geoMean, geoSD, stokesMean, stokesSD, eksPercentMean, eksPercentSD, geoPercentMean, geoPercentSD, stokesPercentMean, stokesPercentSD, kMean, kSD);
+        return (name, totalMean, totalSD, totalMean_n, meanEks, stdEks, eksMean_n, meanGeo,stdGeo, geoMean_n, meanStokes, stdStokes, stokesMean_n, eksMean, eksSD,eksMean_n, geoMean, geoSD, geoMean_n, stokesMean,
+            stokesSD, stokesMean_n, eksPercentMean, eksPercentSD, eksMean_n, geoPercentMean, geoPercentSD, geoMean_n, stokesPercentMean, stokesPercentSD, stokesMean_n, kMean, kSD, kmean_n);
     else:
-        return (name, totalMean, totalSD, meanEks, stdEks, meanGeo,stdGeo,meanStokes, stdStokes, eksMean, eksSD, geoMean, geoSD, stokesMean, stokesSD, eksPercentMean, eksPercentSD, geoPercentMean, geoPercentSD, stokesPercentMean, stokesPercentSD, np.nan, np.nan);
+        return (name, totalMean, totalSD, totalMean_n, meanEks, stdEks, eksMean_n, meanGeo,stdGeo, geoMean_n, meanStokes, stdStokes, stokesMean_n, eksMean, eksSD,eksMean_n, geoMean, geoSD, geoMean_n, stokesMean,
+            stokesSD, stokesMean_n, eksPercentMean, eksPercentSD, eksMean_n, geoPercentMean, geoPercentSD, geoMean_n, stokesPercentMean, stokesPercentSD, stokesMean_n, np.nan, np.nan,np.nan);
 
 
 
 def calc_mean_data(params, calculateTable1=False, calculateTable2=False, calculateTable2GasTransferVelocity=True, verbose=True, outputPath=None):
     #Read data
-    inputDataPath = path.join("D:/SKIM"); #params.paramsetName);
+    inputDataPath = path.join("E:/SKIM"); #params.paramsetName);
     gridwiseData = pd.read_table(path.join(inputDataPath, "gridwise_data/per_grid_cell_edge_data_"+params.paramsetName+".csv"), sep=',');
     gridwiseData.x = gridwiseData.x.astype(int);
     gridwiseData.y = gridwiseData.y.astype(int);
@@ -814,5 +829,7 @@ def calc_mean_data(params, calculateTable1=False, calculateTable2=False, calcula
         # t2data.append(print_statistics(data789, distances[laruIrmingerSeaMask], "Irminger Sea (Jul-Sep)", laruIrmingerSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
 
         df = pd.DataFrame(t2data);
-        df.columns = ["region", "total across-shelf", "total across-shelf SD", "EksAbsolute", "EksAbsoluteStd", "GeoAbsolute", "GeoAbsoluteStd","StokesAbsolute", "StokesAbsoluteStd","proportionEks", "proportionEksSD", "proportionGeo", "proportionGeoSD", "proportionStokes", "proportionStokesSD", "percentEks", "percentEksSD", "percentGeo", "percentGeoSD", "percentStokes", "percentStokesSD", "k", "kSD"];
-        df.to_csv(path.join(outputPath, "output_means", "table2data_"+params.paramsetName+".csv"), index=False);
+        df.columns = ["region", "total across-shelf", "total across-shelf SD","total across-shelf_n", "EksAbsolute", "EksAbsoluteStd","EksAbsolute_n", "GeoAbsolute", "GeoAbsoluteStd","GeoAbsolute_n","StokesAbsolute", "StokesAbsoluteStd","StokesAbsolute_n",
+            "proportionEks", "proportionEksSD","proportionEks_n", "proportionGeo", "proportionGeoSD","proportionGeo_n", "proportionStokes", "proportionStokesSD", "proportionStokes_n", "percentEks", "percentEksSD","percetnEks_n", "percentGeo", "percentGeoSD",
+            "percentGeo_n","percentStokes", "percentStokesSD","percentStokes_n", "k", "kSD","k_n"];
+        df.to_csv(path.join(outputPath, "output_means", "table2data_"+params.paramsetName+'_'+str(params.start_year) +"_"+str(params.end_year)+ ".csv"), index=False);

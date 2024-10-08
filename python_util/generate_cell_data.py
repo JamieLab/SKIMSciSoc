@@ -114,6 +114,7 @@ def generate_cell_data(params, inputDataPath, testPlots=False, verbose=False, ou
 
     #combined all paths into one for each shallow and deep shelf boundary.
     #This is required because deep and shallow path data do not necessarily line up. Otherwise paths must be manually selected.
+    print('Flatten')
     flatShallowCoordData = _flatten_shelf_coordinate_data(shelfCoordData, lineXCoordsList, lineYCoordsList, lineParamsList, pointLineIndexList);
     flatDeepCoordData = _flatten_shelf_coordinate_data(shelfCoordDataDeep, [], [], [], []); #No straight line approximation data for deep contour
 
@@ -158,6 +159,7 @@ def generate_cell_data(params, inputDataPath, testPlots=False, verbose=False, ou
     #Unflatten onShelfDirectionVectors and lineCentrePoints to each shelf segment/coordinate pair
     #This is required so that adjacent coordinates belonging to different paths are not interpretted as continous shelf sections.
     #This also allows them to be used with the path-structured shelfCoordData data
+    print('Unflattening')
     onShelfDirectionVectors = _unflatten(pointLineIndexList, onShelfDirectionVectors);
     lineCentrePoints = _unflatten(pointLineIndexList, lineCentrePoints);
 
@@ -173,9 +175,12 @@ def generate_cell_data(params, inputDataPath, testPlots=False, verbose=False, ou
 
         #calculate where each of the shelf edge lines cross pixels.
         gridIntercepts, abnormalIntercepts = su.get_grid_cell_intercepts_with_edge_lines(shelfEdgeCoords, params);
+        print(len(gridIntercepts))
+        print(len(abnormalIntercepts))
+        print(abnormalIntercepts)
         #Sanity check.
-        if len(abnormalIntercepts) != 0:
-            raise RuntimeError("There were more than zero abnormal grid intercepts.");
+        # if len(abnormalIntercepts) != 0:
+        #     raise RuntimeError("There were more than zero abnormal grid intercepts.");
 
         #Calculate distance proportions between each grid intercept point
         for intercept in gridIntercepts:

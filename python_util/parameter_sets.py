@@ -46,6 +46,30 @@ def get_baseline_params():
 
     return params;
 
+def get_baseline_params_cmems():
+    params = su.QuickStruct();
+    params.numLineApproximationFunction = su.num_line_approximations; #Function to determine the number of line segments to use
+    params.minContourPathSizeShallow = 150; #Contour paths which contain less than this number of coordinate pairs will be ignored
+    params.minContourPathSizeDeep = 100; #Contour paths which contain less than this number of coordinate pairs will be ignored.
+                                        #To be on the safe side this should be less restrictive than the shallow threshold
+
+    #Thresholds used to filter for regions when stokes has an appreciable effect.
+    params.stokesMaskWindStressThreshold = 0.03; #N m^-2 (wind must be below this threshold)
+    params.stokesMaskSigWaveHeightThreshold = 2.0; #metres (wave height must be above this threshold)
+
+
+    #file paths
+    params.ekmanTemplate = Template("E:/SKIM_Paper_Data/SKIM/downloaded_data/CMEMS/${YYYY}/${YYYY}_${MM}_CMEMS_GLOBCURRENT.nc");
+    params.geostrophicTemplate = Template("E:/SKIM_Paper_Data/SKIM/downloaded_data/CMEMS/${YYYY}/${YYYY}_${MM}_CMEMS_GLOBCURRENT.nc");
+    params.stokesTemplate = Template("E:/SKIM_Paper_Data/SKIM/processed_data/monthly_means/stokes_monthly_mean/${YYYY}${MM}_stokes_monthly_mean.nc");
+    params.wavewatchWndTemplate = Template("E:/SKIM_Paper_Data/SKIM/processed_data/monthly_means/wavewatch_wnd_monthly_means/${YYYY}${MM}_wind_monthly_mean.nc");
+    params.wavewatchHsTemplate = Template("E:/SKIM_Paper_Data/SKIM/processed_data/monthly_means/wavewatch_Hs_monthly_means/${YYYY}${MM}_Hs_monthly_mean.nc");
+    params.skimulatorTemplate = Template("E:/SKIM_Paper_Data/SKIM/processed_data/monthly_means/simulated_skim/${YYYY}${MM}_monthly_mean_scisoc_atne.nc");
+    #params.reynoldsSSTTemplate = Template("D:/SKIM_Paper_Data/SKIM/reynolds_sst/reynolds_avhrr_only_monthly_0.25_calculated_tmh/${YYYY}/${YYYY}${MM}01_OCF-SST-GLO-1M-100-REYNOLDS_0.25deg_TMH.nc");
+    params.reynoldsSSTTemplate = Template("D:/Data/SST-CCI/MONTHLY_025_DEG/${YYYY}/${YYYY}${MM}_ESA_CCI_MONTHLY_SST_025_deg.nc");
+
+    return params;
+
 
 #returns QuickStruct which contains the parameters used for the original development of the algorithms
 def __old__get_European_shelf_params(): #Whole European shelf
@@ -181,8 +205,11 @@ def get_European_shelf_params(): #Whole European shelf
 
 
 #Global analysis using multiple years. This is the main analysis.
-def get_global_params():
-    params = get_baseline_params();
+def get_global_params(cmems = False):
+    if cmems:
+        params = get_baseline_params_cmems();
+    else:
+        params = get_baseline_params();
     params.pixelRes = (0.25, 0.25);
     params.timeRes = "monthly";
     params.originLon = -180.0; #at (0,0)
@@ -206,12 +233,83 @@ def get_global_params():
     params.end_year = 2016;
     params.start_month = 0;
     params.end_month = 12;
-    params.contourPathFile = "global_shelf_contour_paths.p";
-    params.contourPathFileDeep = "global_shelf_contour_paths_deep.p";
-    params.paramsetName = "global";
+    if cmems:
+        params.contourPathFile = "cmems_global_shelf_contour_paths.p";
+        params.contourPathFileDeep = "cmems_global_shelf_contour_paths_deep.p";
+        params.paramsetName = "cmems_global";
+    else:
+        params.contourPathFile = "global_shelf_contour_paths.p";
+        params.contourPathFileDeep = "global_shelf_contour_paths_deep.p";
+        params.paramsetName = "global";
 
     return params
 
+#Global analysis using multiple years. This is the main analysis.
+def get_global_params_glory(res = False):
+    params = su.QuickStruct();
+    params.numLineApproximationFunction = su.num_line_approximations; #Function to determine the number of line segments to use
+    params.minContourPathSizeShallow = 150; #Contour paths which contain less than this number of coordinate pairs will be ignored
+    params.minContourPathSizeDeep = 100; #Contour paths which contain less than this number of coordinate pairs will be ignored.
+                                        #To be on the safe side this should be less restrictive than the shallow threshold
+
+    #Thresholds used to filter for regions when stokes has an appreciable effect.
+    params.stokesMaskWindStressThreshold = 0.03; #N m^-2 (wind must be below this threshold)
+    params.stokesMaskSigWaveHeightThreshold = 2.0; #metres (wave height must be above this threshold)
+
+
+    #file paths
+    params.ekmanTemplate = Template("D:/SKIM_Paper_Data/SKIM/downloaded_data/CMEMS/${YYYY}/${YYYY}_${MM}_CMEMS_GLOBCURRENT.nc");
+
+    params.stokesTemplate = Template("D:/SKIM_Paper_Data/SKIM/processed_data/monthly_means/stokes_monthly_mean/${YYYY}${MM}_stokes_monthly_mean.nc");
+    params.wavewatchWndTemplate = Template("D:/SKIM_Paper_Data/SKIM/processed_data/monthly_means/wavewatch_wnd_monthly_means/${YYYY}${MM}_wind_monthly_mean.nc");
+    params.wavewatchHsTemplate = Template("D:/SKIM_Paper_Data/SKIM/processed_data/monthly_means/wavewatch_Hs_monthly_means/${YYYY}${MM}_Hs_monthly_mean.nc");
+    params.skimulatorTemplate = Template("D:/SKIM_Paper_Data/SKIM/processed_data/monthly_means/simulated_skim/${YYYY}${MM}_monthly_mean_scisoc_atne.nc");
+    #params.reynoldsSSTTemplate = Template("D:/SKIM_Paper_Data/SKIM/reynolds_sst/reynolds_avhrr_only_monthly_0.25_calculated_tmh/${YYYY}/${YYYY}${MM}01_OCF-SST-GLO-1M-100-REYNOLDS_0.25deg_TMH.nc");
+    params.reynoldsSSTTemplate = Template("D:/Data/SST-CCI/MONTHLY_025_DEG/${YYYY}/${YYYY}${MM}_ESA_CCI_MONTHLY_SST_025_deg.nc");
+    if res:
+
+        params.pixelRes = (1.0/12, 1.0/12);
+        params.timeRes = "monthly";
+        params.originLon = -180.0; #at (0,0)
+        params.maxLon = 180;
+        params.originLat = 90; #at (0,0)
+        params.maxLat = -80.0;
+        params.geostrophicTemplate = Template("D:/SKIM_Paper_Data/SKIM/downloaded_data/CMEMS_GLORYSV12/${YYYY}/${YYYY}_${MM}_CMEMS_GLORYSV12.nc");
+    else:
+        params.pixelRes = (0.25, 0.25);
+        params.timeRes = "monthly";
+        params.originLon = -180.0; #at (0,0)
+        params.maxLon = 179.75;
+        params.originLat = 89.75; #at (0,0)
+        params.maxLat = -90.0;
+        params.geostrophicTemplate = Template("D:/SKIM_Paper_Data/SKIM/downloaded_data/CMEMS_GLORYSV12_025/${YYYY}/${YYYY}_${MM}_CMEMS_GLORYSV12_0.25_deg.nc");
+
+    originLon, originLat = su.convert_lonlat_to_index(params.originLon, params.originLat, params.pixelRes,lon0 = -180,lat0=90.0-params.pixelRes[0]);
+    maxLon, maxLat = su.convert_lonlat_to_index(params.maxLon, params.maxLat, params.pixelRes,lon0 = -180,lat0=90.0-params.pixelRes[0]);
+    params.ilonRange = (originLon, maxLon); #(600, 850)
+    params.ilatRange = (originLat, maxLat); #(50, 225)
+    params.shallowDepth = 500.0;
+    params.deepDepth = params.shallowDepth+100.0;
+    params.contourPathsShallow = [13, 15, 39, 68, 75, 101, 107, 110, 113, 115, 136, 175, 257, 177, 180];
+    params.contourPathsDeep = [2, 3, 21, 41, 45, 67, 66, 74, 77, 79, 97, 129, 168, 131, 133];
+    params.numberOfBoundryApproximationLines = [32, 16, 32, 16, 4, 8, 8, 32, 16, 8, 32, 32, 8, 8, 8]; #how many lines should be used to approximate the shelf edge boundry
+
+    params.contourMaskFunc = mf.global_shelf_mask_func;
+
+    params.start_year = 1993;
+    params.end_year = 1994;
+    params.start_month = 0;
+    params.end_month = 12;
+    if res:
+        params.contourPathFile = "cmems_glory_high_global_shelf_contour_paths.p";
+        params.contourPathFileDeep = "cmems_glory_high_global_shelf_contour_paths_deep.p";
+        params.paramsetName = "cmems_glory_high_global";
+    else:
+        params.contourPathFile = "cmems_glory_low_global_shelf_contour_paths.p";
+        params.contourPathFileDeep = "cmems_glory_low_global_shelf_contour_paths_deep.p";
+        params.paramsetName = "cmems_glory_low_global";
+
+    return params
 #Global analysis using multiple years. This is the main analysis.
 def get_global_test_params():
     params = get_baseline_params();

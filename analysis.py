@@ -52,9 +52,11 @@ def transform_params(_params, shallowContourDepth):#, errorLevel, repeat):
 
 # #####################################
 # # Sensitivity to shelf contour depth.
-masterParams = ps.get_global_params();
-#contourDepths = [500];#
-contourDepths = [300, 400, 500, 600, 700, 800];
+masterParams = ps.get_global_params(cmems=True);
+# masterParams = ps.get_global_params_glory(res=False)
+contourDepths = [500];#
+#contourDepths = [300, 400, 500, 600, 700, 800];
+#contourDepths = [600, 700, 800];
 # errorLevels = [0.05, 0.10, 0.135, 0.15, 0.20];
 # numRepeats = 3;
 #
@@ -67,8 +69,8 @@ for depth in contourDepths:
     #for errorLevel in errorLevels:
         params = transform_params(masterParams, depth);#, errorLevel, repeat);
         print params.paramsetName;
-        python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordinates=False, generateCellData=False, calculateShelfCurrents=True, withGasTransferCalc=True,outputPathOverride='D:/SKIM');
-        python_util.calc_means.calc_mean_data(params, calculateTable1=False, calculateTable2=True, calculateTable2GasTransferVelocity=True, verbose=True,outputPath='D:/SKIM');
+        python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordinates=False, generateCellData=False, calculateShelfCurrents=True, withGasTransferCalc=True,outputPathOverride='E:/SKIM',cmems='True');
+        python_util.calc_means.calc_mean_data(params, calculateTable1=False, calculateTable2=True, calculateTable2GasTransferVelocity=True, verbose=True,outputPath='E:/SKIM');
         ##python_util.calc_means.calc_mean_data(params, calculateTable1=False, calculateTable2=True, calculateTable2GasTransferVelocity=True, verbose=True);
 
         ##errorProp = [(errorLevel, errorLevel, 0.0)]; #tupples for (Ekman, geostrophic, stokes)
