@@ -229,8 +229,8 @@ def get_global_params(cmems = False):
 
     params.contourMaskFunc = mf.global_shelf_mask_func;
 
-    params.start_year = 1993;
-    params.end_year = 2016;
+    params.start_year = 1995;
+    params.end_year = 2015;
     params.start_month = 0;
     params.end_month = 12;
     if cmems:

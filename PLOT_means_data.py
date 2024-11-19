@@ -11,7 +11,7 @@ from scipy.optimize import curve_fit
 font = {'weight' : 'normal',
         'size'   : 24}
 matplotlib.rc('font', **font)
-
+let = list(map(chr, range(97, 123)))
 
 def func(x, a, b,c):
     return a*(x**2) + b*x + c
@@ -41,7 +41,7 @@ def bootstrap_quad(x,y):
     print(np.std(r2))
     return np.std(r2)
 
-def plot_scatter(xdata = None, dataerr = None,ydata=None,ydata_err=None,xlabel = None,ax = None,let = 'a'):
+def plot_scatter(xdata = None, dataerr = None,ydata=None,ydata_err=None,xlabel = None,ax = None,lett = 'a'):
     ax.errorbar(xdata,ydata,yerr=ydata_err,xerr=dataerr,linestyle='',color='k')
     c = ax.scatter(xdata,ydata,zorder=3)
     ax.set_ylabel('d$\Delta$pCO$_2$/dt ($\mu$atm yr$^{-1}$)')
@@ -68,40 +68,52 @@ def plot_scatter(xdata = None, dataerr = None,ydata=None,ydata_err=None,xlabel =
         pval = pvalue
         boot = quad_boot
     if pval < 0.01:
-        ax.text(0.05,0.95,'R$^{2}$ = ' + str(np.round(coef**2,2)) +' $\pm$ ' + str(np.round(quad_boot,2)) +'\np-value < 0.01' + '\nn = ' + str(len(data['EksAbsolute'])),transform=ax.transAxes,va='top',fontsize=22)
+        ax.text(0.05,0.95,'r$^{2}$ = ' + str(np.round(coef**2,2)) +' $\pm$ ' + str(np.round(quad_boot,2)) +'\np-value < 0.01' + '\nn = ' + str(len(data['EksAbsolute'])),transform=ax.transAxes,va='top',fontsize=22)
     else:
-        ax.text(0.05,0.95,'R$^{2}$ = ' + str(np.round(r,2)) +' $\pm$ ' + str(np.round(boot,2)) +'\np-value = ' + str(np.round(pval,2)) + '\nn = ' + str(len(xdata)),transform=ax.transAxes,va='top',fontsize=22)
+        ax.text(0.05,0.95,'r$^{2}$ = ' + str(np.round(r,2)) +' $\pm$ ' + str(np.round(boot,2)) +'\np-value = ' + str(np.round(pval,2)) + '\nn = ' + str(len(xdata)),transform=ax.transAxes,va='top',fontsize=22)
     if pval < 0.05:
         ax.set_facecolor('lightgray')
+    if lett is str():
+        ax.text(0.90,0.95,'('+lett+')',transform=ax.transAxes,va='top',fontsize=18,fontweight='bold')
+        return lett
+    else:
+        if lett[0] == 0:
+            letter = let[lett[1]]
+        else:
+            letter = let[lett[0]-1] + let[lett[1]]
+        ax.text(0.85,0.95,'('+letter+')',transform=ax.transAxes,va='top',fontsize=18,fontweight='bold')
+        lett[1] = lett[1]+1
+        if lett[1]>25:
+            lett[0] = lett[0]+1
+            lett[1] = 0
+        return lett
 
-    #ax.text(0.90,0.95,'('+let+')',transform=ax.transAxes,va='top',fontsize=18,fontweight='bold')
-
-def plot_scatter_grid(data,ax,text):
+def plot_scatter_grid(data,ax,text,t = [0,0]):
 
     ax[0].annotate(text, xy=(0, 0.5), xytext=(-ax[0].yaxis.labelpad - 20, 0),
                 xycoords=ax[0].yaxis.label, textcoords='offset points',
                 size='large', ha='right', va='center',weight='bold')
     ax1 = ax[0]
-    plot_scatter(xdata=data['EksAbsolute'],dataerr=data['EksAbsoluteStd']/np.sqrt(data['EksAbsolute_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']), xlabel='Mean shelf \n break Ekman current (ms$^{-1}$)',ax=ax1,let='a')#
+    t = plot_scatter(xdata=data['EksAbsolute'],dataerr=data['EksAbsoluteStd']/np.sqrt(data['EksAbsolute_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']), xlabel='Mean shelf \n break Ekman current (ms$^{-1}$)',ax=ax1,lett=t)#
     ax2 = ax[1]
-    plot_scatter(xdata=np.abs(data['EksAbsolute']),dataerr=data['EksAbsoluteStd']/np.sqrt(data['EksAbsolute_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Absolute mean\n shelf break Ekman current ($ms^{-1}$)',ax=ax2,let='b')#
+    t = plot_scatter(xdata=np.abs(data['EksAbsolute']),dataerr=data['EksAbsoluteStd']/np.sqrt(data['EksAbsolute_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Absolute mean\n shelf break Ekman current ($ms^{-1}$)',ax=ax2,lett=t)#
     ax1 = ax[2]
-    plot_scatter(xdata=data['total across-shelf'],dataerr=data['total across-shelf SD']/np.sqrt(data['total across-shelf_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Mean shelf\n break total current (ms$^{-1}$)',ax=ax1,let='c')#
+    t = plot_scatter(xdata=data['total across-shelf'],dataerr=data['total across-shelf SD']/np.sqrt(data['total across-shelf_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Mean shelf\n break total current (ms$^{-1}$)',ax=ax1,lett=t)#
     ax2 = ax[3]
-    plot_scatter(xdata=np.abs(data['total across-shelf']),dataerr=data['total across-shelf SD']/np.sqrt(data['total across-shelf_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Absolute mean shelf\n break total current (ms$^{-1}$)',ax=ax2,let='d')#
+    t = plot_scatter(xdata=np.abs(data['total across-shelf']),dataerr=data['total across-shelf SD']/np.sqrt(data['total across-shelf_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Absolute mean shelf\n break total current (ms$^{-1}$)',ax=ax2,lett=t)#
     ax1 = ax[4]
-    plot_scatter(xdata=data['GeoAbsolute'],dataerr=data['GeoAbsoluteStd']/np.sqrt(data['GeoAbsolute_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Mean shelf\n break geostropic current (ms$^{-1}$)',ax=ax1,let='e')#
+    t = plot_scatter(xdata=data['GeoAbsolute'],dataerr=data['GeoAbsoluteStd']/np.sqrt(data['GeoAbsolute_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Mean shelf\n break geostropic current (ms$^{-1}$)',ax=ax1,lett=t)#
     ax1 = ax[5]
-    plot_scatter(xdata=np.abs(data['GeoAbsolute']),dataerr=data['GeoAbsoluteStd']/np.sqrt(data['GeoAbsolute_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Absolute mean shelf\n break geostrophic current (ms$^{-1}$)',ax=ax1,let='f')#
+    t = plot_scatter(xdata=np.abs(data['GeoAbsolute']),dataerr=data['GeoAbsoluteStd']/np.sqrt(data['GeoAbsolute_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Absolute mean shelf\n break geostrophic current (ms$^{-1}$)',ax=ax1,lett=t)#
     ax1 = ax[6]
-    plot_scatter(xdata=data['k'],dataerr=data['kSD']/data['k_n'],ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Mean gas transfer (10$^{-5}$ ms$^{-1}$)',ax=ax1,let='h')
+    t = plot_scatter(xdata=data['k'],dataerr=data['kSD']/data['k_n'],ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Mean gas transfer (cm $hr^{-1}$)',ax=ax1,lett=t)
     ax1 = ax[7]
-    plot_scatter(xdata=data['proportionEks']*100,dataerr=data['proportionEksSD']*100/np.sqrt(data['proportionEks_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Ekman proportion of\ntotal shelf break current (%)',ax=ax1,let='i')
+    t = plot_scatter(xdata=data['proportionEks']*100,dataerr=data['proportionEksSD']*100/np.sqrt(data['proportionEks_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Ekman proportion of\ntotal shelf break current (%)',ax=ax1,lett=t)
     ax1 = ax[8]
-    plot_scatter(xdata=data['proportionGeo']*100,dataerr=data['proportionGeoSD']*100/np.sqrt(data['proportionGeo_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Geostrophic proportion of\ntotal shelf break current (%)',ax=ax1,let='j')
+    t = plot_scatter(xdata=data['proportionGeo']*100,dataerr=data['proportionGeoSD']*100/np.sqrt(data['proportionGeo_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Geostrophic proportion of\ntotal shelf break current (%)',ax=ax1,lett=t)
     ax1 = ax[9]
-    plot_scatter(xdata=data['proportionStokes']*100,dataerr=data['proportionStokesSD']*100/np.sqrt(data['proportionStokes_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Stokes proportion of\ntotal shelf break current (%)',ax=ax1,let='k')
-
+    t = plot_scatter(xdata=data['proportionStokes']*100,dataerr=data['proportionStokesSD']*100/np.sqrt(data['proportionStokes_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Stokes proportion of\ntotal shelf break current (%)',ax=ax1,lett=t)
+    return t
 def load_data(file):
     print(file)
     data = pd.read_table(file,sep=',')
@@ -187,9 +199,9 @@ quad_boot = bootstrap_quad(data['EksAbsolute'],data['dpCO2 trend wide shelf mean
 #ax1.plot(a,a*stat.slope + stat.intercept,'k--')
 ax1.plot(a,func(a,*popt),'k--',linewidth=2)
 if pvalue < 0.01:
-    ax1.text(0.05,0.95,'R$^{2}$ = ' + str(np.round(coef**2,2)) +' $\pm$ ' + str(np.round(quad_boot,2)) +'\np-value < 0.01' + '\nn = ' + str(len(data['EksAbsolute'])),transform=ax1.transAxes,va='top',fontsize=18)
+    ax1.text(0.05,0.95,'r$^{2}$ = ' + str(np.round(coef**2,2)) +' $\pm$ ' + str(np.round(quad_boot,2)) +'\np-value < 0.01' + '\nn = ' + str(len(data['EksAbsolute'])),transform=ax1.transAxes,va='top',fontsize=18)
 else:
-    ax1.text(0.05,0.95,'R$^{2}$ = ' + str(np.round(coef**2,2)) +' $\pm$ ' + str(np.round(quad_boot,2)) +'\np-value = ' + str(np.round(pvalue,2)) + '\nn = ' + str(len(data['EksAbsolute'])),transform=ax1.transAxes,va='top',fontsize=18)
+    ax1.text(0.05,0.95,'r$^{2}$ = ' + str(np.round(coef**2,2)) +' $\pm$ ' + str(np.round(quad_boot,2)) +'\np-value = ' + str(np.round(pvalue,2)) + '\nn = ' + str(len(data['EksAbsolute'])),transform=ax1.transAxes,va='top',fontsize=18)
 ax1.set_ylim(ylim)
 ax1.set_xlim([-0.045,0.06])
 
@@ -229,9 +241,9 @@ quad_boot = bootstrap_quad(data['EksAbsolute'],data['dpCO2 trend wide shelf mean
 # ax2.plot(a,a*stat.slope + stat.intercept,'k--')
 ax2.plot(a,func(a,*popt),'k--',linewidth=2)
 if pvalue < 0.01:
-    ax2.text(0.05,0.95,'R$^{2}$ = ' + str(np.round(coef**2,2)) +' $\pm$ ' + str(np.round(quad_boot,2)) +'\np-value < 0.01' + '\nn = ' + str(len(data['EksAbsolute'])),transform=ax2.transAxes,va='top',fontsize=18)
+    ax2.text(0.05,0.95,'r$^{2}$ = ' + str(np.round(coef**2,2)) +' $\pm$ ' + str(np.round(quad_boot,2)) +'\np-value < 0.01' + '\nn = ' + str(len(data['EksAbsolute'])),transform=ax2.transAxes,va='top',fontsize=18)
 else:
-    ax2.text(0.05,0.95,'R$^{2}$ = ' + str(np.round(coef**2,2)) +' $\pm$ ' + str(np.round(quad_boot,2)) +'\np-value = ' + str(np.round(pvalue,2)) + '\nn = ' + str(len(data['EksAbsolute'])),transform=ax2.transAxes,va='top',fontsize=18)
+    ax2.text(0.05,0.95,'r$^{2}$ = ' + str(np.round(coef**2,2)) +' $\pm$ ' + str(np.round(quad_boot,2)) +'\np-value = ' + str(np.round(pvalue,2)) + '\nn = ' + str(len(data['EksAbsolute'])),transform=ax2.transAxes,va='top',fontsize=18)
 ax2.text(0.90,0.95,'(b)',transform=ax2.transAxes,va='top',fontsize=18,fontweight='bold')
 ax2.set_ylim(ylim)
 ax2.set_xlim([-0.04,0.055])
@@ -244,88 +256,90 @@ ax2.set_xlim([-0.04,0.055])
 
 fig2.savefig('plots/scatter_plots_manu.png',format='png',dpi=300)
 plt.close(fig2)
+
 # """
 # GAM approach
 # """
-#
-# font = {'weight' : 'normal',
-#         'size'   : 14}
-# def bootstrap_gam(x, y,ens=100):
-#     r2 = []
-#     for i in range(0,100):
-#         a = list(np.random.choice(np.arange(0,len(x)), len(x)-2, replace=False))
-#         y2 = y[a]
-#         if x.shape[1] == 1:
-#             x2 = x[a]
-#         else:
-#             x2 = x[a,:]
-#         gam = GAM(s(0)+s(1),fit_intercept=False,lam=[0.1]*x2.shape[1]).gridsearch(x2, y2,n_splines=np.arange(4,10,1))
-#         r,pvalue = scipy.stats.pearsonr(gam.predict(x2),y2)
-#         r2.append(r**2)
-#         #r2.append(gam.statistics_['pseudo_r2']['explained_deviance'])
-#     return np.std(r2)
-#
-# from pygam import GAM, s, f,l
-# matplotlib.rc('font', **font)
-# out = []
-# for j in ['annual','winter','spring','summer','autumn']:
-#     data = load_data(in_fold+'table2data_cmems_global_500m_'+j+'_1995_2015.csv')
-#     #from sklearn.linear_model import LinearRegression
-#
-#     #
-#     x = np.array(data[['EksAbsolute','k']])
-#     print(x)
-#     y = np.array(data['dpCO2 trend wide shelf mean'])
-#     lam = np.logspace(-2, 1, 10)
-#     lams = [lam] * 2
-#     # popt, pcov = curve_fit(func, data['EksAbsolute'],data['dpCO2 trend wide shelf mean'])
-#     # gam = GAM(s(0) + s(1),fit_intercept=False).fit(x,y)
-#     print(x.shape)
-#     gam = GAM(s(0)+s(1),fit_intercept=False,lam=[0.1]*x.shape[1]).gridsearch(x, y,n_splines=np.arange(4,10,1))
-#     st = bootstrap_gam(x,y)
-#     #st = 0
-#     #gam.summary()
-#     #print(gam.predict(x))
-#     r2,pvalue = scipy.stats.pearsonr(gam.predict(x),y)
-#
-#     #print(gam.statistics_)
-#     print(j+'='+str(gam.statistics_['pseudo_r2']['explained_deviance']))
-#     fig, axs = plt.subplots(1,x.shape[1],figsize=(14,7));
-#     if x.shape[1] == 1:
-#         axs = [axs]
-#     fig_label = [j+'time Ekman\nshelf break current','Mean wintertime gas transfer']
-#     label = ['EksAbsolute','k']
-#     for i, ax in enumerate(axs):
-#         XX = gam.generate_X_grid(term=i)
-#         ax.plot(XX[:, i], gam.partial_dependence(term=i, X=XX),label='GAM relationship')
-#         ax.plot(XX[:, i], gam.partial_dependence(term=i, X=XX, width=.95)[1], c='r', ls='--')
-#         #ax.scatter(x[label[i]],y)
-#         ax.set_title(fig_label[i])
-#         a = ax.get_xlim()
-#         #a = np.arange(a[0],a[1],(a[1]-a[0])/100)
-#         #popt, pcov = curve_fit(func, x[label[i]],y)
-#         #ax.plot(a,func(a,*popt),'k--',linewidth=2,label='Quadratic relationship')
-#         ax.legend()
-#         ax.grid()
-#     out.append([j,gam.statistics_['pseudo_r2']['explained_deviance'],st,r2**2,pvalue])
-#
-#     fig.savefig('plots/'+j+'_GAM_testing.png',dpi=300)
-# print(out)
-# plt.show()
+
+font = {'weight' : 'normal',
+        'size'   : 14}
+def bootstrap_gam(x, y,ens=100):
+    r2 = []
+    for i in range(0,100):
+        a = list(np.random.choice(np.arange(0,len(x)), len(x)-2, replace=False))
+        y2 = y[a]
+        if x.shape[1] == 1:
+            x2 = x[a]
+        else:
+            x2 = x[a,:]
+        gam = GAM(s(0)+s(1),fit_intercept=False,lam=[0.1]*x2.shape[1]).gridsearch(x2, y2,n_splines=np.arange(4,10,1))
+        r,pvalue = scipy.stats.pearsonr(gam.predict(x2),y2)
+        r2.append(r**2)
+        #r2.append(gam.statistics_['pseudo_r2']['explained_deviance'])
+    return np.std(r2)
+
+from pygam import GAM, s, f,l
+matplotlib.rc('font', **font)
+out = []
+for j in ['annual','winter','spring','summer','autumn']:
+    data = load_data(in_fold+'table2data_cmems_global_500m_'+j+'_1995_2015.csv')
+    #from sklearn.linear_model import LinearRegression
+
+    #
+    x = np.array(data[['EksAbsolute','k']])
+    print(x)
+    y = np.array(data['dpCO2 trend wide shelf mean'])
+    lam = np.logspace(-2, 1, 10)
+    lams = [lam] * 2
+    # popt, pcov = curve_fit(func, data['EksAbsolute'],data['dpCO2 trend wide shelf mean'])
+    # gam = GAM(s(0) + s(1),fit_intercept=False).fit(x,y)
+    print(x.shape)
+    gam = GAM(s(0)+s(1),fit_intercept=False,lam=[0.1]*x.shape[1]).gridsearch(x, y,n_splines=np.arange(4,10,1))
+    st = bootstrap_gam(x,y)
+    #st = 0
+    #gam.summary()
+    #print(gam.predict(x))
+    r2,pvalue = scipy.stats.pearsonr(gam.predict(x),y)
+
+    #print(gam.statistics_)
+    print(j+'='+str(gam.statistics_['pseudo_r2']['explained_deviance']))
+    fig, axs = plt.subplots(1,x.shape[1],figsize=(14,7));
+    if x.shape[1] == 1:
+        axs = [axs]
+    fig_label = [j+'time Ekman\nshelf break current','Mean wintertime gas transfer']
+    label = ['EksAbsolute','k']
+    for i, ax in enumerate(axs):
+        XX = gam.generate_X_grid(term=i)
+        ax.plot(XX[:, i], gam.partial_dependence(term=i, X=XX),label='GAM relationship')
+        ax.plot(XX[:, i], gam.partial_dependence(term=i, X=XX, width=.95)[1], c='r', ls='--')
+        #ax.scatter(x[label[i]],y)
+        ax.set_title(fig_label[i])
+        a = ax.get_xlim()
+        #a = np.arange(a[0],a[1],(a[1]-a[0])/100)
+        #popt, pcov = curve_fit(func, x[label[i]],y)
+        #ax.plot(a,func(a,*popt),'k--',linewidth=2,label='Quadratic relationship')
+        ax.legend()
+        ax.grid()
+    out.append([j,gam.statistics_['pseudo_r2']['explained_deviance'],st,r2**2,pvalue])
+
+    fig.savefig('plots/'+j+'_GAM_testing.png',dpi=300)
+print(out)
+plt.show()
 # """
 # Supplementary figure with scatter plots
 # """
-# font = {'weight' : 'normal',
-#         'size'   : 18}
-# matplotlib.rc('font', **font)
-# fig = plt.figure(figsize=(70,35))
-#
-# # plot_scatter_grid(df_means,ax,'')
-# # plt.show()
-# gs = GridSpec(5,10, figure=fig, wspace=0.33,hspace=0.2,bottom=0.05,top=0.95,left=0.08,right=0.975)
-# for j in range(0,len(in_files)):
-#
-#     ax = [fig.add_subplot(gs[j,i]) for i in range(0,10)]
-#     data = load_data(in_fold+in_files[j])
-#     plot_scatter_grid(data,ax,season[j])
-# fig.savefig('plots/scatter_plots.png',format='png',dpi=300)
+font = {'weight' : 'normal',
+        'size'   : 18}
+matplotlib.rc('font', **font)
+fig = plt.figure(figsize=(70,35))
+
+# plot_scatter_grid(df_means,ax,'')
+# plt.show()
+gs = GridSpec(5,10, figure=fig, wspace=0.33,hspace=0.2,bottom=0.05,top=0.95,left=0.08,right=0.975)
+t = [0,0]
+for j in range(0,len(in_files)):
+
+    ax = [fig.add_subplot(gs[j,i]) for i in range(0,10)]
+    data = load_data(in_fold+in_files[j])
+    t = plot_scatter_grid(data,ax,season[j],t)
+fig.savefig('plots/scatter_plots.png',format='png',dpi=300)

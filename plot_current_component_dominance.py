@@ -155,6 +155,14 @@ params = ps.get_global_params(cmems = True)
 #     raise ValueError("This plotting script is intended only for the 'global' parameter set. Significant adaptation is required for use with any other datasets that may change the shelf-coordinates.");
 if ('allData' in globals()) == False:
     ans = raw_input("Press key to read in 'allData', ctrl+c to cancel...");
+    # """
+    # 1993_2016 data loading
+    # """
+    # allData = pickle.load(open(path.join("E:/SKIM", "current_data","1993_2016", "surface_currents_"+params.paramsetName+"_500m.p"), "rb"));
+
+    """
+    1995_2015 data loading
+    """
     allData = pickle.load(open(path.join("E:/SKIM", "current_data", "surface_currents_"+params.paramsetName+"_500m.p"), "rb"));
 #Mask data to restrict analysis
 #for monthIndex in range(len(allData)):
