@@ -133,7 +133,7 @@ def plot_laurelle_regions(mapFig,ax):
                 arrowprops=dict(arrowstyle="->"), fontsize=14,fontweight='bold'
                 )
 def plot_function(ax,allData,let):
-    data = get_processed_data([0, 1, 2], allData);
+    data = get_processed_data([0, 1, 2], allData[36:len(allData)-12]);
     if resampleFraction > 1:
         resample_data(data, resampleFraction);
 
@@ -170,8 +170,9 @@ gs = GridSpec(3,2, figure=fig, wspace=0.01,hspace=0.10,bottom=0.05,top=0.97,left
 ax1 = fig.add_subplot(gs[0,0]); ax2 = fig.add_subplot(gs[0,1]); ax3 = fig.add_subplot(gs[1,0]);ax4 = fig.add_subplot(gs[1,1]);ax5 = fig.add_subplot(gs[2,0]);ax6 = fig.add_subplot(gs[2,1]);
 ax = [ax1,ax2,ax3,ax4,ax5,ax6]
 l = [300,400,500,600,700,800]
+# l=[300]
 let = ['a','b','c','d','e','f']
 for lv in range(len(l)):
-    allData = pickle.load(open(path.join("E:/SKIM", "current_data", "surface_currents_"+params.paramsetName+"_" + str(l[lv])+"m.p"), "rb"));
+    allData = pickle.load(open(path.join("E:/SKIM", "current_data","1993_2016", "surface_currents_"+params.paramsetName+"_" + str(l[lv])+"m.p"), "rb"));
     plot_function(ax[lv],allData,let[lv])
 fig.savefig('plots/current_component_dominance/supplementary_fig_s2.png',dpi=300)
