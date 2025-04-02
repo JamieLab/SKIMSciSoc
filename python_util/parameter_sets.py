@@ -36,7 +36,7 @@ def get_baseline_params():
     params.wavewatchHsTemplate = Template("D:/SKIM_Paper_Data/SKIM/processed_data/monthly_means/wavewatch_Hs_monthly_means/${YYYY}${MM}_Hs_monthly_mean.nc");
     params.skimulatorTemplate = Template("D:/SKIM_Paper_Data/SKIM/processed_data/monthly_means/simulated_skim/${YYYY}${MM}_monthly_mean_scisoc_atne.nc");
     #params.reynoldsSSTTemplate = Template("D:/SKIM_Paper_Data/SKIM/reynolds_sst/reynolds_avhrr_only_monthly_0.25_calculated_tmh/${YYYY}/${YYYY}${MM}01_OCF-SST-GLO-1M-100-REYNOLDS_0.25deg_TMH.nc");
-    params.reynoldsSSTTemplate = Template("D:/Data/SST-CCI/MONTHLY_025_DEG/${YYYY}/${YYYY}${MM}_ESA_CCI_MONTHLY_SST_025_deg.nc");
+    params.reynoldsSSTTemplate = Template("F:/Data/SST-CCI/v2_1/MONTHLY_025_DEG/${YYYY}/${YYYY}${MM}_ESA_CCI_MONTHLY_SST_0.25_deg.nc");
     #params.ekmanTemplate = Template("/media/verwirrt/Backup_THolding/THoldingBackup/SKIM/processed_data/monthly_means/ekman_monthly_mean/${YYYY}${MM}_ekman_surface_monthly_mean.nc");
     #params.geostrophicTemplate = Template("/media/verwirrt/Backup_THolding/THoldingBackup/SKIM/processed_data/monthly_means/geostrophic_monthly_mean/${YYYY}${MM}_geostrophic_monthly_mean.nc");
     #params.stokesTemplate = Template("/media/verwirrt/Backup_THolding/THoldingBackup/SKIM/processed_data/monthly_means/stokes_monthly_mean/${YYYY}${MM}_stokes_monthly_mean.nc");
@@ -66,7 +66,7 @@ def get_baseline_params_cmems():
     params.wavewatchHsTemplate = Template("E:/SKIM_Paper_Data/SKIM/processed_data/monthly_means/wavewatch_Hs_monthly_means/${YYYY}${MM}_Hs_monthly_mean.nc");
     params.skimulatorTemplate = Template("E:/SKIM_Paper_Data/SKIM/processed_data/monthly_means/simulated_skim/${YYYY}${MM}_monthly_mean_scisoc_atne.nc");
     #params.reynoldsSSTTemplate = Template("D:/SKIM_Paper_Data/SKIM/reynolds_sst/reynolds_avhrr_only_monthly_0.25_calculated_tmh/${YYYY}/${YYYY}${MM}01_OCF-SST-GLO-1M-100-REYNOLDS_0.25deg_TMH.nc");
-    params.reynoldsSSTTemplate = Template("D:/Data/SST-CCI/MONTHLY_025_DEG/${YYYY}/${YYYY}${MM}_ESA_CCI_MONTHLY_SST_025_deg.nc");
+    params.reynoldsSSTTemplate = Template("F:/Data/SST-CCI/v2_1/MONTHLY_025_DEG/${YYYY}/${YYYY}${MM}_ESA_CCI_MONTHLY_SST_0.25_deg.nc");
 
     return params;
 

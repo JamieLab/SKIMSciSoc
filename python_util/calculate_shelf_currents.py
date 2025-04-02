@@ -449,6 +449,7 @@ def calculate_shelf_current_data(params, inputDataPath, calculateGasTransferVelo
                 k = 0.222 * wndMoment2[indexY, indexX] + (0.333 * wndMag[indexY, indexX]) * np.sqrt(600.0/schmidt);
                 cellData.k = k;
                 cellData.schmidt = schmidt;
+                cellData.sst = sst[indexY,indexX];
 
             #Only store if either the skimulator or surface current data was used to calculate shelf current data.
             monthData.append(cellData);

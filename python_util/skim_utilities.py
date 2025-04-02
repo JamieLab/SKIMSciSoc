@@ -63,6 +63,8 @@ def num_line_approximations(xCoords, yCoords):
         raise ValueError("X and Y coordinate lists are not the same length.");
     return int(np.round(numCoordPairs*0.05))+1;
 
+def fixed_length_lines(xCoords,yCoords):
+    return int(30)
 
 #Magnitude from x/y component of 2D vectors
 def calculate_magnitude(xComponent, yComponent):

@@ -22,6 +22,7 @@ import mask_functions as mf;
 from os import path;
 import pandas as pd;
 import os; #mkdir
+import scipy.stats
 
 
 def get_month_indices(months, numYears):
@@ -62,15 +63,22 @@ def get_processed_data_across_shelf(months, data, regionMaskBoundsList, params, 
     ycoords = np.empty((length, len(indices))); ycoords[:] = np.nan;
     if gasTransferParameterisation:
         kVals = np.empty((length, len(indices))); kVals[:] = np.nan;
+        sstVals = np.empty((length, len(indices))); sstVals[:] = np.nan;
 
     #Copy data:
     for i, index in enumerate(indices):
+        #print(data[index])
         ekmanVals[:,i] = [curData.nEkmanAcrossShelf for curData in data[index]];
         geostrophicVals[:,i] = [curData.nGeostrophicAcrossShelf for curData in data[index]];
         stokesVals[:,i] = [curData.nStokesAcrossShelf for curData in data[index]];
         stokesMaskPass[:,i] = [curData.stokesMaskPass for curData in data[index]];
         if gasTransferParameterisation:
+            #print([curData.k for curData in data[index]])
+            #print(data[index])
             kVals[:,i] = [curData.k for curData in data[index]];
+            #print(data[index].sst)
+            sstVals[:,i] = [curData.sst for curData in data[index]];
+
 
         xcoords[:,i] = [curData.indexX for curData in data[index]];
         ycoords[:,i] = [curData.indexY for curData in data[index]];
@@ -94,6 +102,8 @@ def get_processed_data_across_shelf(months, data, regionMaskBoundsList, params, 
     if gasTransferParameterisation:
         results.k = np.nanmean(kVals, axis=1);
         results.kSD = np.nanstd(kVals, axis=1);
+        results.sst = np.nanmean(sstVals,axis=1);
+
 
     #get the regionMask and apply it
     regionMask = mf.return_area_mask(regionMaskBoundsList, data[0], params);
@@ -115,6 +125,8 @@ def get_processed_data_across_shelf(months, data, regionMaskBoundsList, params, 
         results.k = results.k[regionMask];
         results.kSD = results.kSD[regionMask];
         results.kVals = kVals[regionMask,:];
+        results.sst = sstVals[regionMask,:]
+
 
     return results;
 
@@ -204,15 +216,15 @@ def weighted_avg_and_std(values, weights):
 
 
 
-def print_statistics(data, distances, name, mask, gasTransferParameterisation=False):
+def print_statistics(data, distances, name, mask, gasTransferParameterisation=False,num_month_indices = 1):
 
     if len(data.xcoords) == 0 or len(mask) == 0:
         print name, "- No data available!\n";
         return (name, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan);
 
-    eks = data.ekmanVals[mask,:];
-    geo = data.geostrophicVals[mask,:];
-    stokes = data.stokesVals[mask,:];
+    eks_full = data.ekmanVals[mask,:];
+    geo_full = data.geostrophicVals[mask,:];
+    stokes_full = data.stokesVals[mask,:];
 
     eks = data.ekmanAcrossShelf[mask]
     geo = data.geostrophicAcrossShelf[mask]
@@ -232,12 +244,21 @@ def print_statistics(data, distances, name, mask, gasTransferParameterisation=Fa
         notnan = np.where(np.isnan(ks)==False);
         kMean, kSD = weighted_avg_and_std(ks[notnan], weights=weights[notnan])
         kmean_n = len(notnan[0])
+
+        sst = np.nanmean(data.sst,axis=1)
+        sst = sst[mask]
+        notnan = np.where(np.isnan(sst)==False);
+        sstMean, sstSD = weighted_avg_and_std(sst[notnan], weights=weights[notnan])
+        sstmean_n = len(notnan[0])
         # kStats = DescrStatsW(ks[notnan], weights=weights[notnan], ddof=0);
         # kMean = kStats.mean;
         # kSD = kStats.std;
 
         print name, "Gas transfer velocity stats";
         print "\tk: ", kMean, "+/-", kSD;
+
+        print name, "SST stats";
+        print "\tsst: ", sstMean, "+/-",sstSD;
 
 
     totals = np.abs(eks) + np.abs(geo) + np.abs(stokes);
@@ -313,6 +334,44 @@ def print_statistics(data, distances, name, mask, gasTransferParameterisation=Fa
     stokesPercentMean, stokesPercentSD =weighted_avg_and_std(stokesPercent[notnan], weights=weights[notnan])
     stokesPercent_n = len(notnan[0])
 
+    # Adding a check for linear temporal trend in the data
+    # Need to do this for each month, in each grid cell average and then average over the spatial grid
+    l = eks_full.shape
+    eks_trend = np.zeros((l[0]))
+    geo_trend = np.zeros((l[0]))
+    stokes_trend = np.zeros((l[0]))
+    for j in range(eks_full.shape[0]): #cycle through grid cells
+        temp_eks = []
+        temp_geo = []
+        temp_stokes = []
+        for i in range(num_month_indices): # Cycle through the months.
+            r = list(range(i,eks_full.shape[1],num_month_indices))
+            stat_eks = scipy.stats.linregress(list(range(len(r))),eks_full[j,r])
+            temp_eks.append(stat_eks.slope)
+
+            stat_geo = scipy.stats.linregress(list(range(len(r))),geo_full[j,r])
+            temp_geo.append(stat_geo.slope)
+
+            stat_stokes = scipy.stats.linregress(list(range(len(r))),stokes_full[j,r])
+            temp_stokes.append(stat_stokes.slope)
+        eks_trend[j] = np.nanmean(np.array(temp_eks))
+        geo_trend[j] = np.nanmean(np.array(temp_geo))
+        stokes_trend[j] = np.nanmean(np.array(temp_stokes))
+
+    print(eks_trend.shape)
+    print(stokesPercent.shape)
+    notnan = np.where(np.isnan(eks_trend)==False);
+    eks_trend_mean,eks_trend_std = weighted_avg_and_std(eks_trend[notnan], weights=weights[notnan])
+    eks_trend_n = len(notnan[0])
+
+    notnan = np.where(np.isnan(geo_trend)==False);
+    geo_trend_mean,geo_trend_std = weighted_avg_and_std(geo_trend[notnan], weights=weights[notnan])
+    geo_trend_n = len(notnan[0])
+
+    notnan = np.where(np.isnan(stokes_trend)==False);
+    stokes_trend_mean,stokes_trend_std = weighted_avg_and_std(stokes_trend[notnan], weights=weights[notnan])
+    stokes_trend_n = len(notnan[0])
+    #
     print name, "percentage total onto-shelf current";
     print "\tEkman: ", eksPercentMean, "+/-", eksPercentSD;
     print "\tGeostrophic: ", geoPercentMean, "+/-", geoPercentSD;
@@ -322,10 +381,12 @@ def print_statistics(data, distances, name, mask, gasTransferParameterisation=Fa
 
     if gasTransferParameterisation:
         return (name, totalMean, totalSD, totalMean_n, meanEks, stdEks, eksMean_n, meanGeo,stdGeo, geoMean_n, meanStokes, stdStokes, stokesMean_n, eksMean, eksSD,eksMean_n, geoMean, geoSD, geoMean_n, stokesMean,
-            stokesSD, stokesMean_n, eksPercentMean, eksPercentSD, eksMean_n, geoPercentMean, geoPercentSD, geoMean_n, stokesPercentMean, stokesPercentSD, stokesMean_n, kMean, kSD, kmean_n);
+            stokesSD, stokesMean_n, eksPercentMean, eksPercentSD, eksMean_n, geoPercentMean, geoPercentSD, geoMean_n, stokesPercentMean, stokesPercentSD, stokesMean_n, kMean, kSD, kmean_n,sstMean,sstSD,sstmean_n,
+            eks_trend_mean,eks_trend_std,eks_trend_n,geo_trend_mean,geo_trend_std,geo_trend_n,stokes_trend_mean,stokes_trend_std,stokes_trend_n);
     else:
         return (name, totalMean, totalSD, totalMean_n, meanEks, stdEks, eksMean_n, meanGeo,stdGeo, geoMean_n, meanStokes, stdStokes, stokesMean_n, eksMean, eksSD,eksMean_n, geoMean, geoSD, geoMean_n, stokesMean,
-            stokesSD, stokesMean_n, eksPercentMean, eksPercentSD, eksMean_n, geoPercentMean, geoPercentSD, geoMean_n, stokesPercentMean, stokesPercentSD, stokesMean_n, np.nan, np.nan,np.nan);
+            stokesSD, stokesMean_n, eksPercentMean, eksPercentSD, eksMean_n, geoPercentMean, geoPercentSD, geoMean_n, stokesPercentMean, stokesPercentSD, stokesMean_n, np.nan, np.nan,np.nan,np.nan,np.nan,np.nan,
+            eks_trend_mean,eks_trend_std,eks_trend_n,geo_trend_mean,geo_trend_std,geo_trend_n,stokes_trend_mean,stokes_trend_std,stokes_trend_n);
 
 
 
@@ -532,17 +593,17 @@ def calc_mean_data(params, calculateTable1=False, calculateTable2=False, calcula
         distances = np.array(gridwiseData["distance"])[data123.regionMask]/1000.0; #in km
         dists, laruNorthSeaMask = mf.calculate_km_subsection_bounds_along_shelf(data123.xcoords, data123.ycoords, distances, mf.laruelle_NorthSea, params, testPlot=False);
         dists, laruEnglishChannelMask = mf.calculate_km_subsection_bounds_along_shelf(data123.xcoords, data123.ycoords, distances, mf.laruelle_EnglishChannel, params, testPlot=False);
-        t2data.append(print_statistics(data_all, distances[laruNorthSeaMask], "North Sea (Annual)", laruNorthSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data123, distances[laruNorthSeaMask], "North Sea (Jan-Mar)", laruNorthSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data456, distances[laruNorthSeaMask], "North Sea (Apr-Jun)", laruNorthSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data789, distances[laruNorthSeaMask], "North Sea (Jul-Sep)", laruNorthSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data101112, distances[laruNorthSeaMask], "North Sea (Oct-Dec)", laruNorthSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
+        t2data.append(print_statistics(data_all, distances[laruNorthSeaMask], "North Sea (Annual)", laruNorthSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 12));
+        t2data.append(print_statistics(data123, distances[laruNorthSeaMask], "North Sea (Jan-Mar)", laruNorthSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data456, distances[laruNorthSeaMask], "North Sea (Apr-Jun)", laruNorthSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data789, distances[laruNorthSeaMask], "North Sea (Jul-Sep)", laruNorthSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data101112, distances[laruNorthSeaMask], "North Sea (Oct-Dec)", laruNorthSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
 
-        t2data.append(print_statistics(data_all, distances[laruEnglishChannelMask], "English Channel (Annual)", laruEnglishChannelMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data123, distances[laruEnglishChannelMask], "English Channel (Jan-Mar)", laruEnglishChannelMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data456, distances[laruEnglishChannelMask], "English Channel (Apr-Jun)", laruEnglishChannelMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data789, distances[laruEnglishChannelMask], "English Channel (Jul-Sep)", laruEnglishChannelMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data101112, distances[laruEnglishChannelMask], "English Channel (Oct-Dec)", laruEnglishChannelMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
+        t2data.append(print_statistics(data_all, distances[laruEnglishChannelMask], "English Channel (Annual)", laruEnglishChannelMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 12));
+        t2data.append(print_statistics(data123, distances[laruEnglishChannelMask], "English Channel (Jan-Mar)", laruEnglishChannelMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data456, distances[laruEnglishChannelMask], "English Channel (Apr-Jun)", laruEnglishChannelMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data789, distances[laruEnglishChannelMask], "English Channel (Jul-Sep)", laruEnglishChannelMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data101112, distances[laruEnglishChannelMask], "English Channel (Oct-Dec)", laruEnglishChannelMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
         # t2data.append(print_statistics(data123, distances[laruEnglishChannelMask], "English Channel (Jan-Mar)", laruEnglishChannelMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
         #
         # t2data.append(print_statistics(data789, distances[laruEnglishChannelMask], "English Channel (Jul-Sep)", laruEnglishChannelMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
@@ -558,11 +619,11 @@ def calc_mean_data(params, calculateTable1=False, calculateTable2=False, calcula
 
         distances = np.array(gridwiseData["distance"])[data123.regionMask]/1000.0; #in km
         dists, laruMidAtlanticBightMask = mf.calculate_km_subsection_bounds_along_shelf(data123.xcoords, data123.ycoords, distances, mf.laruelle_MidAtlanticBight, params, testPlot=False);
-        t2data.append(print_statistics(data_all, distances[laruMidAtlanticBightMask], "Mid Atlantic Bight (Annual)", laruMidAtlanticBightMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data123, distances[laruMidAtlanticBightMask], "Mid Atlantic Bight (Jan-Mar)", laruMidAtlanticBightMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data456, distances[laruMidAtlanticBightMask], "Mid Atlantic Bight (Apr-Jun)", laruMidAtlanticBightMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data789, distances[laruMidAtlanticBightMask], "Mid Atlantic Bight (Jul-Sep)", laruMidAtlanticBightMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data101112, distances[laruMidAtlanticBightMask], "Mid Atlantic Bight (Oct-Dec)", laruMidAtlanticBightMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
+        t2data.append(print_statistics(data_all, distances[laruMidAtlanticBightMask], "Mid Atlantic Bight (Annual)", laruMidAtlanticBightMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 12));
+        t2data.append(print_statistics(data123, distances[laruMidAtlanticBightMask], "Mid Atlantic Bight (Jan-Mar)", laruMidAtlanticBightMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data456, distances[laruMidAtlanticBightMask], "Mid Atlantic Bight (Apr-Jun)", laruMidAtlanticBightMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data789, distances[laruMidAtlanticBightMask], "Mid Atlantic Bight (Jul-Sep)", laruMidAtlanticBightMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data101112, distances[laruMidAtlanticBightMask], "Mid Atlantic Bight (Oct-Dec)", laruMidAtlanticBightMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
 
         # t2data.append(print_statistics(data123, distances[laruMidAtlanticBightMask], "Mid Atlantic Bight (Jan-Mar)", laruMidAtlanticBightMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
         # t2data.append(print_statistics(data789, distances[laruMidAtlanticBightMask], "Mid Atlantic Bight (Jul-Sep)", laruMidAtlanticBightMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
@@ -589,6 +650,7 @@ def calc_mean_data(params, calculateTable1=False, calculateTable2=False, calcula
             data.stokesAcrossShelfSD = np.roll(data.stokesAcrossShelfSD, roll);
             if calculateTable2GasTransferVelocity==True:
                 data.k = np.roll(data.k, roll);
+                data.sst = np.roll(data.sst,roll)
             return data
 
         #Custom roll for Japanese coast (to eliminate split)
@@ -601,11 +663,11 @@ def calc_mean_data(params, calculateTable1=False, calculateTable2=False, calcula
         distances = np.roll(distances, rollAmount);
 
         dists, laruCoastOfJapanMask = mf.calculate_km_subsection_bounds_along_shelf(data123.xcoords, data123.ycoords, distances, mf.laruelle_CoastOfJapan, params, testPlot=False);
-        t2data.append(print_statistics(data_all, distances[laruCoastOfJapanMask], "Coast of Japan (Annual)", laruCoastOfJapanMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data123, distances[laruCoastOfJapanMask], "Coast of Japan (Jan-Mar)", laruCoastOfJapanMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data456, distances[laruCoastOfJapanMask], "Coast of Japan (Apr-Jun)", laruCoastOfJapanMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data789, distances[laruCoastOfJapanMask], "Coast of Japan (Jul-Sep)", laruCoastOfJapanMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data101112, distances[laruCoastOfJapanMask], "Coast of Japan (Oct-Dec)", laruCoastOfJapanMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
+        t2data.append(print_statistics(data_all, distances[laruCoastOfJapanMask], "Coast of Japan (Annual)", laruCoastOfJapanMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 12));
+        t2data.append(print_statistics(data123, distances[laruCoastOfJapanMask], "Coast of Japan (Jan-Mar)", laruCoastOfJapanMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data456, distances[laruCoastOfJapanMask], "Coast of Japan (Apr-Jun)", laruCoastOfJapanMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data789, distances[laruCoastOfJapanMask], "Coast of Japan (Jul-Sep)", laruCoastOfJapanMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data101112, distances[laruCoastOfJapanMask], "Coast of Japan (Oct-Dec)", laruCoastOfJapanMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
         # t2data.append(print_statistics(data123, distances[laruCoastOfJapanMask], "Coast of Japan (Jan-Mar)", laruCoastOfJapanMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
         # t2data.append(print_statistics(data789, distances[laruCoastOfJapanMask], "Coast of Japan (Jul-Sep)", laruCoastOfJapanMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
 
@@ -620,11 +682,11 @@ def calc_mean_data(params, calculateTable1=False, calculateTable2=False, calcula
 
         distances = np.array(gridwiseData["distance"])[data123.regionMask]/1000.0; #in km
         dists, laruPatagonianShelfMask = mf.calculate_km_subsection_bounds_along_shelf(data123.xcoords, data123.ycoords, distances, mf.laruelle_PatagonianShelf, params, testPlot=False);
-        t2data.append(print_statistics(data_all, distances[laruPatagonianShelfMask], "Patagonian Shelf (Annual)", laruPatagonianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data123, distances[laruPatagonianShelfMask], "Patagonian Shelf (Jan-Mar)", laruPatagonianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data456, distances[laruPatagonianShelfMask], "Patagonian Shelf (Apr-Jun)", laruPatagonianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data789, distances[laruPatagonianShelfMask], "Patagonian Shelf (Jul-Sep)", laruPatagonianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data101112, distances[laruPatagonianShelfMask], "Patagonian Shelf (Oct-Dec)", laruPatagonianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
+        t2data.append(print_statistics(data_all, distances[laruPatagonianShelfMask], "Patagonian Shelf (Annual)", laruPatagonianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 12));
+        t2data.append(print_statistics(data123, distances[laruPatagonianShelfMask], "Patagonian Shelf (Jan-Mar)", laruPatagonianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data456, distances[laruPatagonianShelfMask], "Patagonian Shelf (Apr-Jun)", laruPatagonianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data789, distances[laruPatagonianShelfMask], "Patagonian Shelf (Jul-Sep)", laruPatagonianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data101112, distances[laruPatagonianShelfMask], "Patagonian Shelf (Oct-Dec)", laruPatagonianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
         # t2data.append(print_statistics(data123, distances[laruPatagonianShelfMask], "Patagonian Shelf (Jan-Mar)", laruPatagonianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
         # t2data.append(print_statistics(data789, distances[laruPatagonianShelfMask], "Patagonian Shelf (Jul-Sep)", laruPatagonianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
 
@@ -640,11 +702,11 @@ def calc_mean_data(params, calculateTable1=False, calculateTable2=False, calcula
 
         distances = np.array(gridwiseData["distance"])[data123.regionMask]/1000.0; #in km
         dists, laruBeringSeaMask = mf.calculate_km_subsection_bounds_along_shelf(data123.xcoords, data123.ycoords, distances, mf.laruelle_BeringSea, params, testPlot=False);
-        t2data.append(print_statistics(data_all, distances[laruBeringSeaMask], "Bering Sea (Annual)", laruBeringSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data123, distances[laruBeringSeaMask], "Bering Sea (Jan-Mar)", laruBeringSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data456, distances[laruBeringSeaMask], "Bering Sea (Apr-Jun)", laruBeringSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data789, distances[laruBeringSeaMask], "Bering Sea (Jul-Sep)", laruBeringSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data101112, distances[laruBeringSeaMask], "Bering Sea (Oct-Dec)", laruBeringSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
+        t2data.append(print_statistics(data_all, distances[laruBeringSeaMask], "Bering Sea (Annual)", laruBeringSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 12));
+        t2data.append(print_statistics(data123, distances[laruBeringSeaMask], "Bering Sea (Jan-Mar)", laruBeringSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data456, distances[laruBeringSeaMask], "Bering Sea (Apr-Jun)", laruBeringSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data789, distances[laruBeringSeaMask], "Bering Sea (Jul-Sep)", laruBeringSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data101112, distances[laruBeringSeaMask], "Bering Sea (Oct-Dec)", laruBeringSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
         # t2data.append(print_statistics(data123, distances[laruBeringSeaMask], "Bering Sea (Jan-Mar)", laruBeringSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
         # t2data.append(print_statistics(data789, distances[laruBeringSeaMask], "Bering Sea (Jul-Sep)", laruBeringSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
 
@@ -662,20 +724,20 @@ def calc_mean_data(params, calculateTable1=False, calculateTable2=False, calcula
         dists, laruAntarcticPeninsulaMask = mf.calculate_km_subsection_bounds_along_shelf(data123.xcoords, data123.ycoords, distances, mf.laruelle_AntarcticPeninsula, params, testPlot=False);
 
         try:
-            t2data.append(print_statistics(data_all, distances[laruAntarcticPeninsulaMask], "Antarctic Peninsula (Annual)", laruAntarcticPeninsulaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-            t2data.append(print_statistics(data123, distances[laruAntarcticPeninsulaMask], "Antarctic Peninsula (Jan-Mar)", laruAntarcticPeninsulaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-            t2data.append(print_statistics(data456, distances[laruAntarcticPeninsulaMask], "Antarctic Peninsula (Apr-Jun)", laruAntarcticPeninsulaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-            t2data.append(print_statistics(data789, distances[laruAntarcticPeninsulaMask], "Antarctic Peninsula (Jul-Sep)", laruAntarcticPeninsulaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-            t2data.append(print_statistics(data101112, distances[laruAntarcticPeninsulaMask], "Antarctic Peninsula (Oct-Dec)", laruAntarcticPeninsulaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
+            t2data.append(print_statistics(data_all, distances[laruAntarcticPeninsulaMask], "Antarctic Peninsula (Annual)", laruAntarcticPeninsulaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 12));
+            t2data.append(print_statistics(data123, distances[laruAntarcticPeninsulaMask], "Antarctic Peninsula (Jan-Mar)", laruAntarcticPeninsulaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+            t2data.append(print_statistics(data456, distances[laruAntarcticPeninsulaMask], "Antarctic Peninsula (Apr-Jun)", laruAntarcticPeninsulaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+            t2data.append(print_statistics(data789, distances[laruAntarcticPeninsulaMask], "Antarctic Peninsula (Jul-Sep)", laruAntarcticPeninsulaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+            t2data.append(print_statistics(data101112, distances[laruAntarcticPeninsulaMask], "Antarctic Peninsula (Oct-Dec)", laruAntarcticPeninsulaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
             # t2data.append(print_statistics(data123, distances[laruAntarcticPeninsulaMask], "Antarctic Peninsula (Jan-Mar)", laruAntarcticPeninsulaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
             # t2data.append(print_statistics(data789, distances[laruAntarcticPeninsulaMask], "Antarctic Peninsula (Jul-Sep)", laruAntarcticPeninsulaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
         except IndexError: #When distances and laruAntarcticPeninsulaMask are 0 because there were no shelf edges in the region, it fails.
                              #However, print_statistics handles this situation correctly.
-            t2data.append(print_statistics(data_all, distances, "Antarctic Peninsula (Annual)", laruAntarcticPeninsulaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-            t2data.append(print_statistics(data123, distances, "Antarctic Peninsula (Jan-Mar)", laruAntarcticPeninsulaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-            t2data.append(print_statistics(data456, distances, "Antarctic Peninsula (Apr-Jun)", laruAntarcticPeninsulaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-            t2data.append(print_statistics(data789, distances, "Antarctic Peninsula (Jul-Sep)", laruAntarcticPeninsulaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-            t2data.append(print_statistics(data101112, distances, "Antarctic Peninsula (Oct-Dec)", laruAntarcticPeninsulaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
+            t2data.append(print_statistics(data_all, distances, "Antarctic Peninsula (Annual)", laruAntarcticPeninsulaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 12));
+            t2data.append(print_statistics(data123, distances, "Antarctic Peninsula (Jan-Mar)", laruAntarcticPeninsulaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+            t2data.append(print_statistics(data456, distances, "Antarctic Peninsula (Apr-Jun)", laruAntarcticPeninsulaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+            t2data.append(print_statistics(data789, distances, "Antarctic Peninsula (Jul-Sep)", laruAntarcticPeninsulaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+            t2data.append(print_statistics(data101112, distances, "Antarctic Peninsula (Oct-Dec)", laruAntarcticPeninsulaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
             # t2data.append(print_statistics(data789, distances, "Antarctic Peninsula (Jul-Sep)", laruAntarcticPeninsulaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
             # t2data.append(print_statistics(data789, distances, "Antarctic Peninsula (Jul-Sep)", laruAntarcticPeninsulaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
 
@@ -700,11 +762,11 @@ def calc_mean_data(params, calculateTable1=False, calculateTable2=False, calcula
         distances = np.roll(distances, rollAmount);
 
         dists, laruLabradorSeaMask = mf.calculate_km_subsection_bounds_along_shelf(data123.xcoords, data123.ycoords, distances, mf.laruelle_LabradorSea, params, testPlot=False);
-        t2data.append(print_statistics(data_all, distances[laruLabradorSeaMask], "Labrador Sea (Annual)", laruLabradorSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data123, distances[laruLabradorSeaMask], "Labrador Sea (Jan-Mar)", laruLabradorSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data456, distances[laruLabradorSeaMask], "Labrador Sea (Apr-Jun)", laruLabradorSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data789, distances[laruLabradorSeaMask], "Labrador Sea (Jul-Sep)", laruLabradorSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data101112, distances[laruLabradorSeaMask], "Labrador Sea (Oct-Dec)", laruLabradorSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
+        t2data.append(print_statistics(data_all, distances[laruLabradorSeaMask], "Labrador Sea (Annual)", laruLabradorSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 12));
+        t2data.append(print_statistics(data123, distances[laruLabradorSeaMask], "Labrador Sea (Jan-Mar)", laruLabradorSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data456, distances[laruLabradorSeaMask], "Labrador Sea (Apr-Jun)", laruLabradorSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data789, distances[laruLabradorSeaMask], "Labrador Sea (Jul-Sep)", laruLabradorSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data101112, distances[laruLabradorSeaMask], "Labrador Sea (Oct-Dec)", laruLabradorSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
         # t2data.append(print_statistics(data123, distances[laruLabradorSeaMask], "Labrador Sea (Jan-Mar)", laruLabradorSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
         # t2data.append(print_statistics(data789, distances[laruLabradorSeaMask], "Labrador Sea (Jul-Sep)", laruLabradorSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
 
@@ -720,11 +782,11 @@ def calc_mean_data(params, calculateTable1=False, calculateTable2=False, calcula
 
         distances = np.array(gridwiseData["distance"])[data123.regionMask]/1000.0; #in km
         dists, laruTasmanianShelfMask = mf.calculate_km_subsection_bounds_along_shelf(data123.xcoords, data123.ycoords, distances, mf.laruelle_TasmanianShelf, params, testPlot=False);
-        t2data.append(print_statistics(data_all, distances[laruTasmanianShelfMask], "Tasmanian Shelf (Annual)", laruTasmanianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data123, distances[laruTasmanianShelfMask], "Tasmanian Shelf (Jan-Mar)", laruTasmanianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data456, distances[laruTasmanianShelfMask], "Tasmanian Shelf (Apr-Jun)", laruTasmanianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data789, distances[laruTasmanianShelfMask], "Tasmanian Shelf (Jul-Sep)", laruTasmanianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data101112, distances[laruTasmanianShelfMask], "Tasmanian Shelf (Oct-Dec)", laruTasmanianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
+        t2data.append(print_statistics(data_all, distances[laruTasmanianShelfMask], "Tasmanian Shelf (Annual)", laruTasmanianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 12));
+        t2data.append(print_statistics(data123, distances[laruTasmanianShelfMask], "Tasmanian Shelf (Jan-Mar)", laruTasmanianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data456, distances[laruTasmanianShelfMask], "Tasmanian Shelf (Apr-Jun)", laruTasmanianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data789, distances[laruTasmanianShelfMask], "Tasmanian Shelf (Jul-Sep)", laruTasmanianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data101112, distances[laruTasmanianShelfMask], "Tasmanian Shelf (Oct-Dec)", laruTasmanianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
         # t2data.append(print_statistics(data123, distances[laruTasmanianShelfMask], "Tasmanian Shelf (Jan-Mar)", laruTasmanianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
         # t2data.append(print_statistics(data789, distances[laruTasmanianShelfMask], "Tasmanian Shelf (Jul-Sep)", laruTasmanianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
 
@@ -740,11 +802,11 @@ def calc_mean_data(params, calculateTable1=False, calculateTable2=False, calcula
 
         distances = np.array(gridwiseData["distance"])[data123.regionMask]/1000.0; #in km
         dists, laruBarentsSeaMask = mf.calculate_km_subsection_bounds_along_shelf(data123.xcoords, data123.ycoords, distances, mf.laruelle_BarentsSea, params, testPlot=False);
-        t2data.append(print_statistics(data_all, distances[laruBarentsSeaMask], "Barents Sea (Annual)", laruBarentsSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data123, distances[laruBarentsSeaMask], "Barents Sea (Jan-Mar)", laruBarentsSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data456, distances[laruBarentsSeaMask], "Barents Sea (Apr-Jun)", laruBarentsSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data789, distances[laruBarentsSeaMask], "Barents Sea (Jul-Sep)", laruBarentsSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data101112, distances[laruBarentsSeaMask], "Barents Sea (Oct-Dec)", laruBarentsSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
+        t2data.append(print_statistics(data_all, distances[laruBarentsSeaMask], "Barents Sea (Annual)", laruBarentsSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 12));
+        t2data.append(print_statistics(data123, distances[laruBarentsSeaMask], "Barents Sea (Jan-Mar)", laruBarentsSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data456, distances[laruBarentsSeaMask], "Barents Sea (Apr-Jun)", laruBarentsSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data789, distances[laruBarentsSeaMask], "Barents Sea (Jul-Sep)", laruBarentsSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data101112, distances[laruBarentsSeaMask], "Barents Sea (Oct-Dec)", laruBarentsSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
         # t2data.append(print_statistics(data123, distances[laruBarentsSeaMask], "Barents Sea (Jan-Mar)", laruBarentsSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
         # t2data.append(print_statistics(data789, distances[laruBarentsSeaMask], "Barents Sea (Jul-Sep)", laruBarentsSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
 
@@ -760,11 +822,11 @@ def calc_mean_data(params, calculateTable1=False, calculateTable2=False, calcula
 
         distances = np.array(gridwiseData["distance"])[data123.regionMask]/1000.0; #in km
         dists, laruSouthAtlanticBightMask = mf.calculate_km_subsection_bounds_along_shelf(data123.xcoords, data123.ycoords, distances, mf.laruelle_SouthAtlanticBight, params, testPlot=False);
-        t2data.append(print_statistics(data_all, distances[laruSouthAtlanticBightMask], "South Atlantic Bight (Annual)", laruSouthAtlanticBightMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data123, distances[laruSouthAtlanticBightMask], "South Atlantic Bight (Jan-Mar)", laruSouthAtlanticBightMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data456, distances[laruSouthAtlanticBightMask], "South Atlantic Bight (Apr-Jun)", laruSouthAtlanticBightMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data789, distances[laruSouthAtlanticBightMask], "South Atlantic Bight (Jul-Sep)", laruSouthAtlanticBightMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data101112, distances[laruSouthAtlanticBightMask], "South Atlantic Bight (Oct-Dec)", laruSouthAtlanticBightMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
+        t2data.append(print_statistics(data_all, distances[laruSouthAtlanticBightMask], "South Atlantic Bight (Annual)", laruSouthAtlanticBightMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 12));
+        t2data.append(print_statistics(data123, distances[laruSouthAtlanticBightMask], "South Atlantic Bight (Jan-Mar)", laruSouthAtlanticBightMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data456, distances[laruSouthAtlanticBightMask], "South Atlantic Bight (Apr-Jun)", laruSouthAtlanticBightMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data789, distances[laruSouthAtlanticBightMask], "South Atlantic Bight (Jul-Sep)", laruSouthAtlanticBightMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data101112, distances[laruSouthAtlanticBightMask], "South Atlantic Bight (Oct-Dec)", laruSouthAtlanticBightMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
         # t2data.append(print_statistics(data123, distances[laruSouthAtlanticBightMask], "South Atlantic Bight (Jan-Mar)", laruSouthAtlanticBightMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
         # t2data.append(print_statistics(data789, distances[laruSouthAtlanticBightMask], "South Atlantic Bight (Jul-Sep)", laruSouthAtlanticBightMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
 
@@ -780,11 +842,11 @@ def calc_mean_data(params, calculateTable1=False, calculateTable2=False, calcula
 
         distances = np.array(gridwiseData["distance"])[data123.regionMask]/1000.0; #in km
         dists, laruSouthernGreenlandMask = mf.calculate_km_subsection_bounds_along_shelf(data123.xcoords, data123.ycoords, distances, mf.laruelle_SouthernGreenland, params, testPlot=False);
-        t2data.append(print_statistics(data_all, distances[laruSouthernGreenlandMask], "Southern Greenland (Annual)", laruSouthernGreenlandMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data123, distances[laruSouthernGreenlandMask], "Southern Greenland (Jan-Mar)", laruSouthernGreenlandMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data456, distances[laruSouthernGreenlandMask], "Southern Greenland  (Apr-Jun)", laruSouthernGreenlandMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data789, distances[laruSouthernGreenlandMask], "Southern Greenland  (Jul-Sep)", laruSouthernGreenlandMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data101112, distances[laruSouthernGreenlandMask], "Southern Greenland  (Oct-Dec)", laruSouthernGreenlandMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
+        t2data.append(print_statistics(data_all, distances[laruSouthernGreenlandMask], "Southern Greenland (Annual)", laruSouthernGreenlandMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 12));
+        t2data.append(print_statistics(data123, distances[laruSouthernGreenlandMask], "Southern Greenland (Jan-Mar)", laruSouthernGreenlandMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data456, distances[laruSouthernGreenlandMask], "Southern Greenland  (Apr-Jun)", laruSouthernGreenlandMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data789, distances[laruSouthernGreenlandMask], "Southern Greenland  (Jul-Sep)", laruSouthernGreenlandMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data101112, distances[laruSouthernGreenlandMask], "Southern Greenland  (Oct-Dec)", laruSouthernGreenlandMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
         # t2data.append(print_statistics(data123, distances[laruSouthernGreenlandMask], "Southern Greenland (Jan-Mar)", laruSouthernGreenlandMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
         # t2data.append(print_statistics(data789, distances[laruSouthernGreenlandMask], "Southern Greenland (Jul-Sep)", laruSouthernGreenlandMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
 
@@ -800,11 +862,11 @@ def calc_mean_data(params, calculateTable1=False, calculateTable2=False, calcula
 
         distances = np.array(gridwiseData["distance"])[data123.regionMask]/1000.0; #in km
         dists, laruCascadianShelfMask = mf.calculate_km_subsection_bounds_along_shelf(data123.xcoords, data123.ycoords, distances, mf.laruelle_CascadianShelf, params, testPlot=False);
-        t2data.append(print_statistics(data_all, distances[laruCascadianShelfMask], "Cascadian Shelf (Annual)", laruCascadianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data123, distances[laruCascadianShelfMask], "Cascadian Shelf (Jan-Mar)", laruCascadianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data456, distances[laruCascadianShelfMask], "Cascadian Shelf  (Apr-Jun)", laruCascadianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data789, distances[laruCascadianShelfMask], "Cascadian Shelf  (Jul-Sep)", laruCascadianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data101112, distances[laruCascadianShelfMask], "Cascadian Shelf  (Oct-Dec)", laruCascadianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
+        t2data.append(print_statistics(data_all, distances[laruCascadianShelfMask], "Cascadian Shelf (Annual)", laruCascadianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 12));
+        t2data.append(print_statistics(data123, distances[laruCascadianShelfMask], "Cascadian Shelf (Jan-Mar)", laruCascadianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data456, distances[laruCascadianShelfMask], "Cascadian Shelf  (Apr-Jun)", laruCascadianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data789, distances[laruCascadianShelfMask], "Cascadian Shelf  (Jul-Sep)", laruCascadianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data101112, distances[laruCascadianShelfMask], "Cascadian Shelf  (Oct-Dec)", laruCascadianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
         # t2data.append(print_statistics(data123, distances[laruCascadianShelfMask], "Cascadian Shelf (Jan-Mar)", laruCascadianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
         # t2data.append(print_statistics(data789, distances[laruCascadianShelfMask], "Cascadian Shelf (Jul-Sep)", laruCascadianShelfMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
 
@@ -820,16 +882,17 @@ def calc_mean_data(params, calculateTable1=False, calculateTable2=False, calcula
 
         distances = np.array(gridwiseData["distance"])[data123.regionMask]/1000.0; #in km
         dists, laruIrmingerSeaMask = mf.calculate_km_subsection_bounds_along_shelf(data123.xcoords, data123.ycoords, distances, mf.laruelle_IrmingerSea, params, testPlot=False);
-        t2data.append(print_statistics(data_all, distances[laruIrmingerSeaMask], "Irminger Sea (Annual)", laruIrmingerSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data123, distances[laruIrmingerSeaMask], "Irminger Sea (Jan-Mar)", laruIrmingerSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data456, distances[laruIrmingerSeaMask], "Irminger Sea  (Apr-Jun)", laruIrmingerSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data789, distances[laruIrmingerSeaMask], "Irminger Sea  (Jul-Sep)", laruIrmingerSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
-        t2data.append(print_statistics(data101112, distances[laruIrmingerSeaMask], "Irminger Sea (Oct-Dec)", laruIrmingerSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
+        t2data.append(print_statistics(data_all, distances[laruIrmingerSeaMask], "Irminger Sea (Annual)", laruIrmingerSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 12));
+        t2data.append(print_statistics(data123, distances[laruIrmingerSeaMask], "Irminger Sea (Jan-Mar)", laruIrmingerSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data456, distances[laruIrmingerSeaMask], "Irminger Sea  (Apr-Jun)", laruIrmingerSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data789, distances[laruIrmingerSeaMask], "Irminger Sea  (Jul-Sep)", laruIrmingerSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
+        t2data.append(print_statistics(data101112, distances[laruIrmingerSeaMask], "Irminger Sea (Oct-Dec)", laruIrmingerSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity,num_month_indices = 3));
         # t2data.append(print_statistics(data123, distances[laruIrmingerSeaMask], "Irminger Sea (Jan-Mar)", laruIrmingerSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
         # t2data.append(print_statistics(data789, distances[laruIrmingerSeaMask], "Irminger Sea (Jul-Sep)", laruIrmingerSeaMask, gasTransferParameterisation=calculateTable2GasTransferVelocity));
 
         df = pd.DataFrame(t2data);
         df.columns = ["region", "total across-shelf", "total across-shelf SD","total across-shelf_n", "EksAbsolute", "EksAbsoluteStd","EksAbsolute_n", "GeoAbsolute", "GeoAbsoluteStd","GeoAbsolute_n","StokesAbsolute", "StokesAbsoluteStd","StokesAbsolute_n",
             "proportionEks", "proportionEksSD","proportionEks_n", "proportionGeo", "proportionGeoSD","proportionGeo_n", "proportionStokes", "proportionStokesSD", "proportionStokes_n", "percentEks", "percentEksSD","percetnEks_n", "percentGeo", "percentGeoSD",
-            "percentGeo_n","percentStokes", "percentStokesSD","percentStokes_n", "k", "kSD","k_n"];
+            "percentGeo_n","percentStokes", "percentStokesSD","percentStokes_n", "k", "kSD","k_n","sst","sstSD","sst_n","eks_trend","eks_trend_std","eks_trend_n","geo_trend","geo_trend_std","geo_trend_n",
+            "stokes_trend","stokes_trend_std","stokes_trend_n"];
         df.to_csv(path.join(outputPath, "output_means", "table2data_"+params.paramsetName+'_'+str(params.start_year) +"_"+str(params.end_year)+ ".csv"), index=False);

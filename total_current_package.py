@@ -11,8 +11,9 @@ from os import path;
 import datetime
 
 ref_year = 1990
-depth_l = [300,400,500,600,700,800]
-bath_file = 'D:/SKIM/GEBCO_bathymetry_0.25x0.25deg.nc'
+# depth_l = [300,400,500,600,700,800]
+depth_l = [300]
+bath_file = 'E:/SKIM/GEBCO_bathymetry_0.25x0.25deg.nc'
 c = Dataset(bath_file,'r')
 lat = np.array(c.variables['lat'])
 lon = np.array(c.variables['lon'])
@@ -21,13 +22,16 @@ c.close()
 
 
 for depth in depth_l:
-    out_file = 'D:/SKIM/netcdf_out/'+str(depth)+'m_total_current_data_Shutler_et_al.nc'
+    #out_file = 'D:/SKIM/netcdf_out/'+str(depth)+'m_total_current_data_Shutler_et_al.nc'
+    out_file = 'E:/SKIM/netcdf_out/Jenny_MAB.nc'
 
     params = ps.get_global_params(cmems = True)
+    params.paramsetName = 'CMEMS_Jenny_MAB'
     # if params.paramsetName != "global": #Could actually use the shelf coordinates filename (which is also stored in params)...
     #     raise ValueError("This plotting script is intended only for the 'global' parameter set. Significant adaptation is required for use with any other datasets that may change the shelf-coordinates.");
     if ('allData' in globals()) == False:
-        allData = pickle.load(open(path.join("D:/SKIM", "current_data", "surface_currents_"+params.paramsetName+"_"+str(depth)+"m.p"), "rb"));
+        #allData = pickle.load(open(path.join("E:/SKIM", "current_data", "surface_currents_"+params.paramsetName+"_"+str(depth)+"m.p"), "rb"));
+        allData = pickle.load(open(path.join("E:/SKIM", "current_data", "surface_currents_"+params.paramsetName+".p"), "rb"));
 
     yr = 1993
     mon = 1

@@ -25,7 +25,7 @@ import os; #for mkdir
 #   generateCellData
 #   calculateShelfCurrents
 #   withGasTransferCalc will calculate k along with shelf currents
-def shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordinates=False, generateCellData=False, calculateShelfCurrents=False, withGasTransferCalc=True, outputPathOverride=None, errorPropagation=None,cmems='False'):
+def shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordinates=False, generateCellData=False, calculateShelfCurrents=False, withGasTransferCalc=True, outputPathOverride=None, errorPropagation=None,cmems='False',shape=False,shape_file_shallow='',shape_file_deep=''):
     #Global settings
     if outputPathOverride != None:
         runDataPath = outputPathOverride;
@@ -60,7 +60,7 @@ def shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordi
     if generateShelfCoordinates:
         print "Generating shelf path coordinate data.";
         #Create contour plots and select paths to use as the shelf edge coordinates.
-        shelf_coord_creator.get_shelf_edge_data(params, testPlots=True, outputPath=runDataPath);
+        shelf_coord_creator.get_shelf_edge_data(params, testPlots=True, outputPath=runDataPath,shape=shape,shape_file_shallow=shape_file_shallow,shape_file_deep=shape_file_deep);
 
 
     ######################

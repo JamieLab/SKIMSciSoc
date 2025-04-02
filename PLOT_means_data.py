@@ -102,9 +102,9 @@ def plot_scatter_grid(data,ax,text,t = [0,0]):
     ax2 = ax[3]
     t = plot_scatter(xdata=np.abs(data['total across-shelf']),dataerr=data['total across-shelf SD']/np.sqrt(data['total across-shelf_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Absolute mean shelf\n break total current (ms$^{-1}$)',ax=ax2,lett=t)#
     ax1 = ax[4]
-    t = plot_scatter(xdata=data['GeoAbsolute'],dataerr=data['GeoAbsoluteStd']/np.sqrt(data['GeoAbsolute_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Mean shelf\n break geostropic current (ms$^{-1}$)',ax=ax1,lett=t)#
+    t = plot_scatter(xdata=data['GeoAbsolute'],dataerr=data['GeoAbsoluteStd']/np.sqrt(data['GeoAbsolute_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Mean shelf\n break Geostropic current (ms$^{-1}$)',ax=ax1,lett=t)#
     ax1 = ax[5]
-    t = plot_scatter(xdata=np.abs(data['GeoAbsolute']),dataerr=data['GeoAbsoluteStd']/np.sqrt(data['GeoAbsolute_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Absolute mean shelf\n break geostrophic current (ms$^{-1}$)',ax=ax1,lett=t)#
+    t = plot_scatter(xdata=np.abs(data['GeoAbsolute']),dataerr=data['GeoAbsoluteStd']/np.sqrt(data['GeoAbsolute_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Absolute mean shelf\n break Geostrophic current (ms$^{-1}$)',ax=ax1,lett=t)#
     ax1 = ax[6]
     t = plot_scatter(xdata=data['k'],dataerr=data['kSD']/data['k_n'],ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Mean gas transfer (cm $hr^{-1}$)',ax=ax1,lett=t)
     ax1 = ax[7]
@@ -113,6 +113,17 @@ def plot_scatter_grid(data,ax,text,t = [0,0]):
     t = plot_scatter(xdata=data['proportionGeo']*100,dataerr=data['proportionGeoSD']*100/np.sqrt(data['proportionGeo_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Geostrophic proportion of\ntotal shelf break current (%)',ax=ax1,lett=t)
     ax1 = ax[9]
     t = plot_scatter(xdata=data['proportionStokes']*100,dataerr=data['proportionStokesSD']*100/np.sqrt(data['proportionStokes_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Stokes proportion of\ntotal shelf break current (%)',ax=ax1,lett=t)
+
+    ax1 = ax[10]
+    t = plot_scatter(xdata=data['sst'],dataerr=data['sstSD']/np.sqrt(data['sst_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Sea Surface Temperature ($^o$C)',ax=ax1,lett=t)
+    ax1 = ax[11]
+    t = plot_scatter(xdata=data['eks_trend'],dataerr=data['eks_trend_std']/np.sqrt(data['eks_trend_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Mean shelf \n break Ekman current trend (ms$^{-1}$ yr$^{-1}$)',ax=ax1,lett=t)
+    ax1 = ax[12]
+    t = plot_scatter(xdata=data['geo_trend'],dataerr=data['geo_trend_std']/np.sqrt(data['eks_trend_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Mean shelf \n break Geostrophic current trend (ms$^{-1}$ yr$^{-1}$)',ax=ax1,lett=t)
+
+    ax1 = ax[13]
+    t = plot_scatter(xdata=data['stokes_trend'],dataerr=data['stokes_trend_std']/np.sqrt(data['stokes_trend_n']),ydata =data['dpCO2 trend wide shelf mean'],ydata_err=data['dpCO2 trend wide shelf std']/np.sqrt(data['dpCO2 trend wide shelf_n']),xlabel='Mean shelf \n break Stokes current trend (ms$^{-1}$ yr$^{-1}$)',ax=ax1,lett=t)
+
     return t
 def load_data(file):
     print(file)
@@ -331,15 +342,15 @@ plt.show()
 font = {'weight' : 'normal',
         'size'   : 18}
 matplotlib.rc('font', **font)
-fig = plt.figure(figsize=(70,35))
+fig = plt.figure(figsize=(98,35))
 
 # plot_scatter_grid(df_means,ax,'')
 # plt.show()
-gs = GridSpec(5,10, figure=fig, wspace=0.33,hspace=0.2,bottom=0.05,top=0.95,left=0.08,right=0.975)
+gs = GridSpec(5,14, figure=fig, wspace=0.33,hspace=0.2,bottom=0.05,top=0.95,left=0.08,right=0.975)
 t = [0,0]
 for j in range(0,len(in_files)):
 
-    ax = [fig.add_subplot(gs[j,i]) for i in range(0,10)]
+    ax = [fig.add_subplot(gs[j,i]) for i in range(0,14)]
     data = load_data(in_fold+in_files[j])
     t = plot_scatter_grid(data,ax,season[j],t)
 fig.savefig('plots/scatter_plots.png',format='png',dpi=300)

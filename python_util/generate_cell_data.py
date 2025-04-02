@@ -99,7 +99,9 @@ def generate_cell_data(params, inputDataPath, testPlots=False, verbose=False, ou
             print "Generating straight line approximations for path #"+str(pathIndex+1)+" of", numPaths;
 
         shelfEdgeCoords = np.array(shelfCoordData.coordinatesLists[pathIndex], dtype=float);
-
+        print(shelfEdgeCoords[:,0])
+        print(shelfEdgeCoords[:,1])
+        print(numLines[pathIndex])
         #approximate the shelf edge by generating a series of straight line segments along the shelf edge coordinates.
         lineXCoords, lineYCoords, lineParams, pointLineIndex = su.split_into_n_lines(shelfEdgeCoords[:,0], shelfEdgeCoords[:,1], numLines[pathIndex]);
         lineXCoordsList.append(lineXCoords);

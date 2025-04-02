@@ -13,6 +13,7 @@ Changes:
 import copy;
 import python_util.parameter_sets as ps;
 import python_util.analysis_driver;
+import python_util.skim_utilities as su;
 
 import python_util.calc_means;
 
@@ -63,16 +64,24 @@ contourDepths = [500];#
 # ### Uncomment as neccessary for multiple repeats and uncertainty analysis
 #
 # #for repeat in range(numRepeats):
-for depth in contourDepths:
-    #if (repeat == 0) and (depth == 300):
-    #        continue;
-    #for errorLevel in errorLevels:
-        params = transform_params(masterParams, depth);#, errorLevel, repeat);
-        print params.paramsetName;
-        python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordinates=False, generateCellData=False, calculateShelfCurrents=True, withGasTransferCalc=True,outputPathOverride='E:/SKIM',cmems='True');
-        python_util.calc_means.calc_mean_data(params, calculateTable1=False, calculateTable2=True, calculateTable2GasTransferVelocity=True, verbose=True,outputPath='E:/SKIM');
+# for depth in contourDepths:
+#     #if (repeat == 0) and (depth == 300):
+#     #        continue;
+#     #for errorLevel in errorLevels:
+#         params = transform_params(masterParams, depth);#, errorLevel, repeat);
+#         print params.paramsetName;
+#         #python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordinates=False, generateCellData=True, calculateShelfCurrents=True, withGasTransferCalc=True,outputPathOverride='E:/SKIM',cmems='True');
+#         python_util.calc_means.calc_mean_data(params, calculateTable1=False, calculateTable2=True, calculateTable2GasTransferVelocity=True, verbose=True,outputPath='E:/SKIM');
         ##python_util.calc_means.calc_mean_data(params, calculateTable1=False, calculateTable2=True, calculateTable2GasTransferVelocity=True, verbose=True);
 
         ##errorProp = [(errorLevel, errorLevel, 0.0)]; #tupples for (Ekman, geostrophic, stokes)
         ##python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordinates=False, generateCellData=False, calculateShelfCurrents=True, withGasTransferCalc=True, errorPropagation=errorProp);
         ##python_util.calc_means.calc_mean_data(params, calculateTable1=False, calculateTable2=True, calculateTable2GasTransferVelocity=True, verbose=True);
+
+params = transform_params(masterParams, 300);#, errorLevel, repeat);
+params.paramsetName = 'CMEMS_Jenny_MAB'
+params.minContourPathSizeShallow = 2
+params.minContourPathSizeDeep = 2
+params.numLineApproximationFunction = su.fixed_length_lines;
+print params.paramsetName;
+python_util.analysis_driver.shelf_current_analysis(params, generateBathymetry=False, generateShelfCoordinates=True, generateCellData=True, calculateShelfCurrents=True, withGasTransferCalc=True,outputPathOverride='E:/SKIM',cmems='True',shape=True,shape_file_shallow = 'E:/SKIM_Paper_Data/SKIM/MAB_300m_Contour_v3/MAB_300m_Contour_v3.shp',shape_file_deep = 'E:/SKIM_Paper_Data/SKIM/contour_shapefiles_MAB/MAB_400m_Contour.shp');
