@@ -243,7 +243,7 @@ def calculate_shelf_current_data(params, inputDataPath, calculateGasTransferVelo
             indexY = cell.y;
             latDegrees = cell.lat;
             ontoShelfVector = np.array([cell.onshelfX, cell.onshelfY]);
-            alongShelfVector = su.rotate_vector(ontoShelfVector,90)
+            alongShelfVector = np.array([cell.alongshelfX,cell.alongshelfY])
             segmentDistance = cell.distance;
             sigWaveHeight = hs[indexY, indexX];
 

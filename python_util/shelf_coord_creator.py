@@ -22,11 +22,12 @@ import shapefile
 #minLengthThreshold - paths with fewer coordinate pairs than this will be ignored
 #numLinesFunc - function that calculates the number of lines that should be used to approximate this part of the path
 #lon, lat - the longitude and latitude values that define the grid.
-def _extract_contour_paths(bathymetry, lon, lat, contourDepth, minLengthThreshold, numLinesFunc, verbose=False,shape=False,shape_file=''):
+def _extract_contour_paths(bathymetry, lon, lat, contourDepth, minLengthThreshold, numLinesFunc, verbose=True,shape=False,shape_file=''):
     #Generate contours
     plt.ioff();
     if shape:
         lat_temp = np.flipud(lat)
+        # lat_temp=lat
         # lon = lon.data
         sf = shapefile.Reader(shape_file)
         shapes = sf.shapes()
@@ -99,15 +100,15 @@ def _extract_contour_paths(bathymetry, lon, lat, contourDepth, minLengthThreshol
             p = cs.collections[0].get_paths()[pathIndex];
             v = p.vertices;
             if len(v) >= minLengthThreshold: #If the threshold is passed, add this path
-                xs.append(v[:,0]);
-                ys.append(v[:,1]);
+                xs.append(np.flipud(v[:,0]));
+                ys.append(np.flipud(v[:,1]));
                 pathIndicesUsed.append(pathIndex);
                 numLines.append(numLinesFunc(xs[-1], ys[-1]))
     print(xs)
     print(ys)
     #Zip x and y coordinates into a single matrix (useful format for some calculations)
     coordinatesLists = [];
-    for i in range(1):#range(len(xs)):
+    for i in range(len(xs)):
         coordinatesLists.append (zip(xs[i],ys[i]));
 
     #Store data as a struct and return
@@ -127,8 +128,9 @@ def _extract_contour_paths(bathymetry, lon, lat, contourDepth, minLengthThreshol
 #Plots
 def _test_plot_coordinate_data(coordData, depth, title,coordDatadeep=False):
     plt.figure();
-    plt.imshow(depth);
+    #plt.imshow(depth);
     for i in range(len(coordData.xs)):
+        print(i)
         plt.scatter(coordData.xs[i], coordData.ys[i], s=0.5, color=(1,0,0));
     if coordDatadeep:
         for i in range(len(coordDatadeep.xs)):
@@ -161,7 +163,7 @@ def get_shelf_edge_data(params, testPlots=False, outputPath=None,shape=False,sha
     if testPlots:
         _test_plot_coordinate_data(shallowShelfCoordinateData, depth, "Shallow shelf used",coordDatadeep=deepShelfCoordinateData);
         _test_plot_coordinate_data(deepShelfCoordinateData, depth, "Deep shelf used");
-        plt.pause(1);
+        # plt.pause(5);
 
     #Save coordinate data
     if outputPath != None:

@@ -216,7 +216,7 @@ def calculate_on_shelf_direction(lineXCoords, lineYCoords, shelfEdgeCoords, shel
         print "Line number", lineNum, "of", len(lineXCoords);
         #Get normals for line
         lineNormals = calculate_normal_vectors(lineXCoords[lineNum][0], lineYCoords[lineNum][0], lineXCoords[lineNum][1], lineYCoords[lineNum][1]);
-
+        print(lineNormals)
         #find centre of approximation line
         approxLineCentrePointX = (lineXCoords[lineNum][1] - lineXCoords[lineNum][0])/2.0 + lineXCoords[lineNum][0];
         approxLineCentrePointY = (lineYCoords[lineNum][1] - lineYCoords[lineNum][0])/2.0 + lineYCoords[lineNum][0];
@@ -237,12 +237,12 @@ def calculate_on_shelf_direction(lineXCoords, lineYCoords, shelfEdgeCoords, shel
             offsetBearing = calculate_direction(intersectInfo.offsetVector[0], intersectInfo.offsetVector[1]); #from north (clockwise)
             normalBearing = calculate_direction(lineNormals[0][0], lineNormals[0][1]);
             reverseNormalBearing = calculate_direction(lineNormals[1][0], lineNormals[1][1]);
-
             #negate distance of offset bearing matches reverseNormalBearing.
             if np.isclose(offsetBearing, reverseNormalBearing, rtol=0, atol=1e-06):
+                print('Reverse')
                 intersectInfoList[iInfo].dist = -intersectInfoList[iInfo].dist;
-            elif np.isclose(offsetBearing, normalBearing, rtol=0, atol=1e-06) == False:
-                raise ValueError("Could not match intersect offset bearing with either normal bearing!");
+            # elif np.isclose(offsetBearing, normalBearing, rtol=0, atol=1e-06) == False:
+            #     raise ValueError("Could not match intersect offset bearing with either normal bearing!");
 
         #Using intersectInfo distances, identify which normal to use for the current approximation line
         #Find closest deep and closest shallow intercepts
@@ -254,14 +254,21 @@ def calculate_on_shelf_direction(lineXCoords, lineYCoords, shelfEdgeCoords, shel
         for intersectInfo in intersectInfoList:
             if (closeDeep == None) or (np.abs(intersectInfo.dist) < np.abs(closeDeep.dist)):
                 closeDeep = intersectInfo;
+        closeShallow = intersectInfo;
+        closeDeep = intersectInfo;
 
         #Determine on shelf direction
-        #if closeShallow == None or closeDeep == None:
-        #    onShelfDirectionVectors.append(None);
-       # else:
+        # if closeShallow == None or closeDeep == None:
+        #     print('None')
+        #     onShelfDirectionVectors.append(None);
         if (closeDeep.dist < closeShallow.dist):
+            print('Deep')
+            onShelfDirectionVectors.append(lineNormals[0]);
+        elif (closeDeep.dist == closeShallow.dist):
+            print('Equal')
             onShelfDirectionVectors.append(lineNormals[0]);
         else:
+            print('Shallow')
             onShelfDirectionVectors.append(lineNormals[1]);
         lineCentrePoints.append( (approxLineCentrePointX, approxLineCentrePointY) );
 

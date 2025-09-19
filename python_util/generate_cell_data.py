@@ -65,7 +65,7 @@ def _unflatten(pointLineIndexList, flattenedData):
 #testPlots=True;
 #verbose = False;
 #outputPath = inputDataPath;
-def generate_cell_data(params, inputDataPath, testPlots=False, verbose=False, outputPath=None):
+def generate_cell_data(params, inputDataPath, testPlots=False, verbose=True, outputPath=None):
 #    params = ps.get_current_params();
 #    ilatRange = params.ilatRange; #(50,225);
 #    ilonRange = params.ilonRange; #(600, 850)
@@ -86,6 +86,7 @@ def generate_cell_data(params, inputDataPath, testPlots=False, verbose=False, ou
     shelfCoordDataDeep = pickle.load(open(path.join(inputDataPath, "shelf_coordinates", params.contourPathFileDeep), "rb"));
     numPaths = len(shelfCoordData.coordinatesLists);
     numLines = shelfCoordData.numLines;
+    print('Number of lines = ' + str(numLines))
 
     #These will be used to create the cell data dataframe
     columns = ["x", "y", "lon", "lat", "distance", "distanceProp", "onshelfX", "onshelfY", "alongshelfX", "alongshelfY"];
@@ -99,16 +100,16 @@ def generate_cell_data(params, inputDataPath, testPlots=False, verbose=False, ou
             print "Generating straight line approximations for path #"+str(pathIndex+1)+" of", numPaths;
 
         shelfEdgeCoords = np.array(shelfCoordData.coordinatesLists[pathIndex], dtype=float);
-        print(shelfEdgeCoords[:,0])
-        print(shelfEdgeCoords[:,1])
-        print(numLines[pathIndex])
+        # print(shelfEdgeCoords[:,0])
+        # print(shelfEdgeCoords[:,1])
+        # print(numLines[pathIndex])
         #approximate the shelf edge by generating a series of straight line segments along the shelf edge coordinates.
         lineXCoords, lineYCoords, lineParams, pointLineIndex = su.split_into_n_lines(shelfEdgeCoords[:,0], shelfEdgeCoords[:,1], numLines[pathIndex]);
         lineXCoordsList.append(lineXCoords);
         lineYCoordsList.append(lineYCoords);
         lineParamsList.append(lineParams);
         pointLineIndexList.append(pointLineIndex);
-
+        print(lineXCoordsList)
     #Remove so these don't accidentally get used.
     del (lineXCoords, lineYCoords, lineParams, pointLineIndex, shelfEdgeCoords);
 
@@ -119,7 +120,6 @@ def generate_cell_data(params, inputDataPath, testPlots=False, verbose=False, ou
     print('Flatten')
     flatShallowCoordData = _flatten_shelf_coordinate_data(shelfCoordData, lineXCoordsList, lineYCoordsList, lineParamsList, pointLineIndexList);
     flatDeepCoordData = _flatten_shelf_coordinate_data(shelfCoordDataDeep, [], [], [], []); #No straight line approximation data for deep contour
-
 
     #Now calculate the shelf normals for the flattened data
     #Calculate the onto-shelf direction vectors for each line segment of the shelf edge approximation
@@ -155,6 +155,8 @@ def generate_cell_data(params, inputDataPath, testPlots=False, verbose=False, ou
         normalsAx.yaxis.set_ticks(ytickslocs)
         normalsAx.set_yticklabels(labels)
         normalsFig.savefig('plots/shelf_normals.png',dpi=300)
+
+
         plt.pause(1);
 
 

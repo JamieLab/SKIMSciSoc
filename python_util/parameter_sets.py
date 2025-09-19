@@ -229,14 +229,14 @@ def get_global_params(cmems = False):
 
     params.contourMaskFunc = mf.global_shelf_mask_func;
 
-    params.start_year = 1995;
-    params.end_year = 2015;
+    params.start_year = 1993;
+    params.end_year = 2016;
     params.start_month = 0;
     params.end_month = 12;
     if cmems:
         params.contourPathFile = "cmems_global_shelf_contour_paths.p";
         params.contourPathFileDeep = "cmems_global_shelf_contour_paths_deep.p";
-        params.paramsetName = "cmems_global";
+        params.paramsetName = "cmems_global_"+str(params.start_year)+"_"+str(params.end_year);
     else:
         params.contourPathFile = "global_shelf_contour_paths.p";
         params.contourPathFileDeep = "global_shelf_contour_paths_deep.p";

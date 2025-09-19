@@ -108,8 +108,10 @@ def get_processed_data_across_shelf(months, data, regionMaskBoundsList, params):
 
 
 def plot_shelf_section(segmentDistances, data123, data789, xlabel, yRange=None, outputFile=None, alpha=0.25, noClose=False, laruelleSections=[], laruelleSectionNames=[],ax=[]):
-    def plot_laruelle_data(ax):
+    def plot_laruelle_data(ax,laruelleSections,laruelleSectionNames):
         yRange = ax.get_ylim();
+        print(laruelleSections)
+        print(laruelleSectionNames)
         for isection, section in enumerate(laruelleSections):
             ax.plot([section[0], section[1]], [yRange[0], yRange[0]], 'r', linewidth=2.5);
 
@@ -143,7 +145,7 @@ def plot_shelf_section(segmentDistances, data123, data789, xlabel, yRange=None, 
         ax1.set_ylim(yRange[0], yRange[1]);
 
     #Laruelle sections (plot horizontal lines to show the extend of each section)
-    plot_laruelle_data(ax1);
+    plot_laruelle_data(ax1,laruelleSections,laruelleSectionNames);
 
     #data798
     ax2.fill_between(segmentDistances, data789.geostrophicAcrossShelf-data789.geostrophicAcrossShelfSD, data789.geostrophicAcrossShelf+data789.geostrophicAcrossShelfSD, alpha=alpha);
@@ -161,7 +163,7 @@ def plot_shelf_section(segmentDistances, data123, data789, xlabel, yRange=None, 
         ax2.set_ylim(yRange[0], yRange[1]);
 
     #Laruelle sections (plot horizontal lines to show the extend of each section)
-    plot_laruelle_data(ax2);
+    plot_laruelle_data(ax2,laruelleSections,laruelleSectionNames);
 
     plt.tight_layout();
 
@@ -297,7 +299,8 @@ if plotCoastOfJapan:
     segmentDistances = np.cumsum(distances);
     xlabel = "distance along shelf (km, Southwest to Northeast)";
     outputFile = "plots/current_along_shelf/flux_along_shelf_coastOfJapan.png"
-    plot_shelf_section(segmentDistances, data123, data789, xlabel=xlabel, yRange=yRange, outputFile=outputFile, noClose=closePlots, laruelleSections=dists, laruelleSectionNames=["Coast of Japan"]);
+
+    plot_shelf_section(segmentDistances, data123, data789, xlabel=xlabel, yRange=yRange, outputFile=outputFile, noClose=closePlots, laruelleSections=[dists[0]], laruelleSectionNames=["Coast of Japan"]);
 
 if plotPatagonia:
     data123 = get_processed_data_across_shelf([0,1,2], allData, [mf.area_Patagonia], params);
